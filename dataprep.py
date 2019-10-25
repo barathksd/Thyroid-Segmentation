@@ -32,6 +32,7 @@ def load(fpath):
             full_path = path+ '\\' + file
             imgdata = pydicom.read_file(full_path)
             img = imgdata.pixel_array
+            #img = img[63:360,136:540,:]
             #img2 = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
             imglist.append(img)
         imgd[name] = imglist
