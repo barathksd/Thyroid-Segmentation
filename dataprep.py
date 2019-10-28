@@ -36,7 +36,7 @@ def load(fpath):
                 continue
             imgdata = pydicom.read_file(full_path)
             img = imgdata.pixel_array
-            imglist.append(img[40:,:,:])
+            imglist.append(img[40:-40,:,:])
         imgd[name] = imglist
     return imgd
 imgd = load(dir_path)
@@ -119,10 +119,54 @@ def segment(img):
     fill(img)
 
 
-segment(imgd['03'][1])
-cv2.imshow('image2',editimg*30)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+#segment(imgd['03'][1])
+#cv2.imshow('image2',editimg*30)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
+    
+
+def cut_alt(img):
+    e1 = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=3)
+    e1 = np.uint8(cv2.cvtColor(e1,cv2.COLOR_BGR2GRAY))
+#    e1[e1>=100] = 255
+#    e1[e1<100] = 0
+    
+    e = np.where(e1.sum(axis=1)/(255*e1.shape[1])>0.3)[0]
+    top = e[0]
+    tot = 0
+    print(e)
+    for i in range(e[0],e[0]+10):
+        if i in e:
+            tot += 1
+        else:
+            tot = 0
+        if tot >= 7:
+            top = i
+    #print(e)
+    ec = e1.sum(axis=0)/(255*e1.shape[0])
+    print(np.round(ec*100))
+    i = 0
+    left = False
+    right = False
+    li = int(e1.shape[1]/2)
+    ri = int(e1.shape[1]/2)
+    for i in range(int(e1.shape[1]/2)):
+        if left == False:
+            li = int(e1.shape[1]/2-i)
+            if ec[li]<0.1:
+                left = True
+        if right == False:
+            ri = int(e1.shape[1]/2+i)
+            if ec[ri]<0.1:
+                right = True
+    print(li,ri)
+    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\demo.png',e1)
+    
+    cv2.imshow('img',img[top:,li:ri])
+    cv2.imshow('img2',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
 
 def cut(img):
 
@@ -138,6 +182,7 @@ def cut(img):
         col_activate[col] = len(np.unique(mono_img[:,col]))
     
     judge_len = 30
+    judge_len_2 = 20
     min_unique_1 = 5
     min_unique_2 = 10
     
@@ -146,8 +191,8 @@ def cut(img):
     for t in range(mono_img.shape[0]-judge_len):
         if all(row_activate[t:t+judge_len] >= min_unique_1):
             top = t
-            for b in range(top, mono_img.shape[0]-judge_len):
-                if all(row_activate[b:b+judge_len] < min_unique_2):
+            for b in range(top, mono_img.shape[0]-judge_len_2):
+                if all(row_activate[b:b+judge_len_2] < min_unique_2):
                     break
             bottom = b
             break
@@ -171,8 +216,7 @@ def cut(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-
-cut(imgd['01'][1])
+#cut(imgd['05'][1])
 
 
     
