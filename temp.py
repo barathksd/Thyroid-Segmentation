@@ -155,7 +155,6 @@ tensorboard = TensorBoard(log_dir='C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\l
 
 
 model = unet(input_size,n_filters,cf_size,mpf_size,s_size)
-print(model.summary())
     
 opt = keras.optimizers.Adam(learning_rate=0.0001)
    
