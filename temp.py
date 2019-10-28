@@ -19,6 +19,7 @@ from tensorflow.keras.optimizers import *
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import f1_score, confusion_matrix, precision_score, recall_score, jaccard_score
 from tensorflow.keras.callbacks import *
 import cv2
@@ -174,6 +175,7 @@ history = model.fit(x_train, y_train,batch_size=batch_size,
 
 model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
 model.save('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\shapes_cnn.h5')
+
 
 
 
