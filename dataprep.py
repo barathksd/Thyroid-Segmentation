@@ -41,9 +41,6 @@ def load(fpath):
     return imgd
 imgd = load(dir_path)
 
-img = cv2.imread('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\images\\ultrasound\\demo2.jpg')
-#img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
