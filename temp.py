@@ -22,6 +22,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import f1_score, confusion_matrix, precision_score, recall_score, jaccard_score
 from tensorflow.keras.callbacks import *
+from tensorflow.keras.applications import vgg16
 import cv2
 
 #Reference libraries 
@@ -42,7 +43,7 @@ def load():
     (x_train, y_train), (x_test, y_test) = None,None,None,None
     return x_train,y_train,x_test,y_test
 
-x_train,y_train,x_test,y_test = load()
+#x_train,y_train,x_test,y_test = load()
 
 # self defined loss
 def ioc_loss(y_true,y_pred):                                                   
@@ -154,7 +155,8 @@ def load_model():
 tensorboard = TensorBoard(log_dir='C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\logs\\tb1')
 
 
-model = unet(input_size,n_filters,cf_size,mpf_size,s_size)
+model = unet(input_size,n_filters,cf_size,mpf_size,s_size)                     #34,513,285 parameters
+
     
 opt = keras.optimizers.Adam(learning_rate=0.0001)
    
@@ -175,8 +177,6 @@ history = model.fit(x_train, y_train,batch_size=batch_size,
 model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
 model.save('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\shapes_cnn.h5')
 
-
-
-
+#vggmodel = vgg16.VGG16(weights = 'imagenet',include_top=False,input_shape=(224, 224, 3)) #14,714,688 parameters
 
 
