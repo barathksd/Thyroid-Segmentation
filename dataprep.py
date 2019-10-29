@@ -123,51 +123,7 @@ def segment(img):
 #cv2.imshow('image2',editimg*30)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
-    
-
-def cut_alt(img):
-    e1 = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=3)
-    e1 = np.uint8(cv2.cvtColor(e1,cv2.COLOR_BGR2GRAY))
-#    e1[e1>=100] = 255
-#    e1[e1<100] = 0
-    
-    e = np.where(e1.sum(axis=1)/(255*e1.shape[1])>0.3)[0]
-    top = e[0]
-    tot = 0
-    print(e)
-    for i in range(e[0],e[0]+10):
-        if i in e:
-            tot += 1
-        else:
-            tot = 0
-        if tot >= 7:
-            top = i
-    #print(e)
-    ec = e1.sum(axis=0)/(255*e1.shape[0])
-    print(np.round(ec*100))
-    i = 0
-    left = False
-    right = False
-    li = int(e1.shape[1]/2)
-    ri = int(e1.shape[1]/2)
-    for i in range(int(e1.shape[1]/2)):
-        if left == False:
-            li = int(e1.shape[1]/2-i)
-            if ec[li]<0.1:
-                left = True
-        if right == False:
-            ri = int(e1.shape[1]/2+i)
-            if ec[ri]<0.1:
-                right = True
-    print(li,ri)
-    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\demo.png',e1)
-    
-    cv2.imshow('img',img[top:,li:ri])
-    cv2.imshow('img2',img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
+   
 def cut(img):
 
     mono_img = np.sum(img, axis=2)
