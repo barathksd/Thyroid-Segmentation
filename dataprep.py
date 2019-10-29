@@ -180,20 +180,20 @@ def scale(img):
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     mx = np.max(img[:,:left])
     
-    #print(top,left,mx,img.shape)
+    print(top,left,mx,img.shape)
     
     j = top - 10
     s = j
-    l = 0
-    n = 0
+    length = 0
+    repetition = 0
     col = 0
-    lp = 0
+    length_prev = 0
     for i in range(left):
         j = np.max([0,top - 10])
         s = j
-        l = 0
-        n = 0
-        lp = 0
+        length = 0
+        repetition = 0
+        length_prev = 0
         #print(i,' *')
         while j>=0 and j<(bottom -10):
             j += 1
@@ -205,29 +205,29 @@ def scale(img):
                     s = j
                     j += 15
                 
-                elif l==0 and s!=j:
-                    l = (j-s)
+                elif length==0 and s!=j:
+                    length = (j-s)
                     s = j
                     j += 15
                     
-                elif (j-s)>0.9*l and  (j-s)<1.1*l:
-                    lp = l
-                    l = j-s
+                elif (j-s)>0.9*length and  (j-s)<1.1*length:
+                    length_prev = length
+                    length = j-s
                     s = j
-                    n += 1
+                    repetition += 1
                     j += 15
-                    if n >= 3:
+                    if repetition >= 3:
                         col = i
                         break
-                elif (j-s)<=0.9*l or (j-s)>=1.1*l:
-                    l = j-s
+                elif (j-s)<=0.9*length or (j-s)>=1.1*length:
+                    length = j-s
                     s = j
                     j += 15
         if col != 0:
             break
         
         
-    #print(col,l,lp)
+    print(col,length,length_prev)
     if col!=0:
         cv2.imshow('scale',img[0:bottom+10,col-20:col+20])
     cv2.imshow('org',img)
