@@ -171,6 +171,7 @@ def cut(img):
     cv2.imshow('org',img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return top, left, bottom
 
 #cut(imgd['05'][1])
 
