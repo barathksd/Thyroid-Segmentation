@@ -154,7 +154,7 @@ def cut(img):
             break
         
     judge_len = 30
-    min_unique = 50
+    min_unique = 30
     left = 0
     right = mono_img.shape[1]-1
     for l in range(mono_img.shape[1]-judge_len):
