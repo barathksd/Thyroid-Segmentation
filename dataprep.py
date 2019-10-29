@@ -174,5 +174,65 @@ def cut(img):
 
 #cut(imgd['05'][1])
 
+def scale(img):
+    
+    top,left,bottom = cut(img)
+    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    mx = np.max(img[:,:left])
+    
+    #print(top,left,mx,img.shape)
+    
+    j = top - 10
+    s = j
+    l = 0
+    n = 0
+    col = 0
+    lp = 0
+    for i in range(left):
+        j = np.max([0,top - 10])
+        s = j
+        l = 0
+        n = 0
+        lp = 0
+        #print(i,' *')
+        while j>=0 and j<(bottom -10):
+            j += 1
+            minmax = np.min([200,mx])
+            
+            if img[j,i]> minmax:
+                #print('-- ',i,j,img[j,i],minmax,j,s,l,n,col)
+                if s==0 and s!=j:
+                    s = j
+                    j += 15
+                
+                elif l==0 and s!=j:
+                    l = (j-s)
+                    s = j
+                    j += 15
+                    
+                elif (j-s)>0.9*l and  (j-s)<1.1*l:
+                    lp = l
+                    l = j-s
+                    s = j
+                    n += 1
+                    j += 15
+                    if n >= 3:
+                        col = i
+                        break
+                elif (j-s)<=0.9*l or (j-s)>=1.1*l:
+                    l = j-s
+                    s = j
+                    j += 15
+        if col != 0:
+            break
+        
+        
+    #print(col,l,lp)
+    if col!=0:
+        cv2.imshow('scale',img[0:bottom+10,col-20:col+20])
+    cv2.imshow('org',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
 
     
