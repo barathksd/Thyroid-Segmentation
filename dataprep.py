@@ -20,30 +20,52 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
 import tqdm
 
-dir_path = 'D:\\Ito data\\AI'
-
+dicom_path = 'D:\\Ito data\\AI'
+jpg_path = 'D:\\Ito data\\AI2'
+sample = None
 imgdata = None
+
 #loads data from folder and saves it in dict, key is patientID, value is images in list
-def load(fpath):    
-    global imgdata
+def load_dicom(fpath):    
+    global imgdata,sample
     imgd = {}
     for path,subdir,files in os.walk(fpath):
         name = os.path.basename(path)
         imglist = []
         for file in files:
             full_path = path+ '\\' + file
-            if int(file.replace('Image',''))%2 == 0:
-                continue
-            imgdata = pydicom.read_file(full_path)
-            img = imgdata.pixel_array
-            imglist.append(img[40:-40,:,:])
-        imgd[name] = imglist
+            if int(file.replace('Image',''))%2 != 0:
+                imgdata = pydicom.read_file(full_path)
+                if sample == None:
+                    sample = imgdata
+                img = imgdata.pixel_array
+                imglist.append(img[40:-40,:,:])
+        if len(imglist) != 0:
+            imgd[name] = imglist
     return imgd
-imgd = load(dir_path)
 
+imgd = load_dicom(dicom_path)
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
+
+def load_jpg(fpath):
+    imgj = {}
+    for path,subdir,files in os.walk(fpath):
+        name = os.path.basename(path)
+        imglist = []
+        for file in files:
+            full_path = path+ '\\' + file
+            
+            if '.jpg' in full_path and 'red' in full_path:
+                img = cv2.imread(full_path)
+                imglist.append(img[40:-40,:,:])
+            
+        if len(imglist) != 0:
+            imgj[name] = imglist
+    return imgj
+            
+imgj = load_jpg(jpg_path)
 
 # resizes image while maintaining aspect ratio
 def img_resize(img,final_shape):
@@ -234,6 +256,22 @@ def scale(img):
     cv2.imshow('org',img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def createmap(img):
+    top,bottom,left,right = cut(img)
+    img = img[top:bottom,left:right]
+    img2 = np.zeros(img.shape)
+    r,c,d = img.shape
+    
+    for i in range(r):
+        for j in range(c):
+            if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[100,200,240]).sum()>=3:
+                img2[i,j] = np.array([100,200,255])
+    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\map.png',img2)
+    cv2.imshow('img',img2)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+   
     
 
     
