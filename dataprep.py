@@ -265,7 +265,7 @@ def createmap(img):
     
     for i in range(r):
         for j in range(c):
-            if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[100,200,240]).sum()>=3:
+            if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[80,160,256]).sum()>=3:
                 img2[i,j] = np.array([100,200,255])
     cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\map.png',img2)
     cv2.imshow('img',img2)
