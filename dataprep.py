@@ -26,7 +26,6 @@ annotated_path = 'D:\\Ito data\\annotated'
 
 sample = None
 imgdata = None
-
 #loads data from folder and saves it in dict, key is patientID, value is images in list
 def load_dicom(fpath):    
     global imgdata,sample
@@ -45,12 +44,11 @@ def load_dicom(fpath):
         if len(imglist) != 0:
             imgd[name] = imglist
     return imgd
-
 imgd = load_dicom(dicom_path)
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
-#loads jpg files and saves in dict
+
 def load_jpg(fpath):
     imgj = {}
     for path,subdir,files in os.walk(fpath):
@@ -67,6 +65,7 @@ def load_jpg(fpath):
             imgj[name] = imglist
     return imgj
             
+
 imgj = load_jpg(jpg_path)
 
 # resizes image while maintaining aspect ratio
@@ -89,15 +88,16 @@ def img_resize(img,final_shape):
     return rimg
     #print(rimg.shape)
 
-# segments the image based on the input points
+#segments the image based on the input points
 def segment(img):
     points = []
     def mousepoint(event,x,y,flags,param): 
         global points
         if event == cv2.EVENT_LBUTTONDOWN:
+            print(x,y,img[y,x],'  --------')
             cv2.circle(img,(x,y),1,(255,255,255),-1)
             points.append((x,y))
-            print(x,y,'  --------')
+            
     
     editimg = None
     def fill(img):
@@ -143,11 +143,57 @@ def segment(img):
     fill(img)
 
 
-#segment(imgd['03'][1])
+
 #cv2.imshow('image2',editimg*30)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
-   
+    
+
+def cut_alt(img):
+    e1 = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=3)
+    e1 = np.uint8(cv2.cvtColor(e1,cv2.COLOR_BGR2GRAY))
+#    e1[e1>=100] = 255
+#    e1[e1<100] = 0
+    
+    e = np.where(e1.sum(axis=1)/(255*e1.shape[1])>0.3)[0]
+    top = e[0]
+    tot = 0
+    print(e)
+    for i in range(e[0],e[0]+10):
+        if i in e:
+            tot += 1
+        else:
+            tot = 0
+        if tot >= 7:
+            top = i
+    #print(e)
+    ec = e1.sum(axis=0)/(255*e1.shape[0])
+    print(np.round(ec*100))
+    i = 0
+    left = False
+    right = False
+    li = int(e1.shape[1]/2)
+    ri = int(e1.shape[1]/2)
+    for i in range(int(e1.shape[1]/2)):
+        if left == False:
+            li = int(e1.shape[1]/2-i)
+            if ec[li]<0.1:
+                left = True
+        if right == False:
+            ri = int(e1.shape[1]/2+i)
+            if ec[ri]<0.1:
+                right = True
+    print(li,ri)
+    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\demo.png',e1)
+    
+    cv2.imshow('img',img[top:,li:ri])
+    cv2.imshow('img2',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
+
 def cut(img):
 
     mono_img = np.sum(img, axis=2)
@@ -164,7 +210,7 @@ def cut(img):
     judge_len = 30
     judge_len_2 = 20
     min_unique_1 = 5
-    min_unique_2 = 10
+    min_unique_2 = 20
     
     top = 0
     bottom = mono_img.shape[0]-1
@@ -176,7 +222,7 @@ def cut(img):
                     break
             bottom = b
             break
-        
+    
     judge_len = 30
     min_unique = 30
     left = 0
@@ -189,19 +235,19 @@ def cut(img):
                     break
             right = r
             break
-    cut_img = img[top:bottom, left:right]
+#    cut_img = img[top:bottom, left:right]
     
-    cv2.imshow('image',cut_img)
-    cv2.imshow('org',img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+#    cv2.imshow('image',cut_img)
+#    cv2.imshow('org',img)
+#    cv2.waitKey(0)
+#    cv2.destroyAllWindows()
     return top, bottom, left, right
 
-#cut(imgd['05'][1])
+
 
 def scale(img):
     
-    top, bottom, left, right = cut(img)
+    top,bottom,left,right = cut(img)
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     mx = np.max(img[:,:left])
     
@@ -212,6 +258,7 @@ def scale(img):
     length = 0
     repetition = 0
     col = 0
+    row = 0
     length_prev = 0
     for i in range(left):
         j = np.max([0,top - 10])
@@ -225,26 +272,32 @@ def scale(img):
             minmax = np.min([200,mx])
             
             if img[j,i]> minmax:
+                #print(' ## ',i,j)
+                
                 #print('-- ',i,j,img[j,i],minmax,j,s,l,n,col)
                 if s==0 and s!=j:
                     s = j
                     j += 15
                 
                 elif length==0 and s!=j:
+                    
                     length = (j-s)
                     s = j
                     j += 15
                     
                 elif (j-s)>0.9*length and  (j-s)<1.1*length:
+                    
                     length_prev = length
                     length = j-s
                     s = j
                     repetition += 1
                     j += 15
                     if repetition >= 3:
+                        row = j
                         col = i
                         break
                 elif (j-s)<=0.9*length or (j-s)>=1.1*length:
+                    
                     length = j-s
                     s = j
                     j += 15
@@ -254,17 +307,19 @@ def scale(img):
         
     print(col,length,length_prev)
     if col!=0:
-        cv2.imshow('scale',img[0:bottom+10,col-20:col+20])
+        cv2.imshow('scale',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
+        cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\scale.png',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
     cv2.imshow('org',img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
 
 def create_image(imgd,img,color,k,index,c=5):
     top,bottom,left,right = cut(imgd[k][min(int(index/2),1,c)])          
     img = img[top:bottom,left:right]
     img2 = np.zeros(img.shape)
     r,c,d = img.shape
-    print(r,c,k,index,index/2)
+    #print(r,c,k,index,index/2)
     for i in range(r):
         for j in range(c):
             if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[80,160,256]).sum()>=3:
@@ -285,10 +340,10 @@ def create_map(imgd,imgj):
             create_image(imgd,v[i],color,k,i)
 
 
-create_map(imgd,imgj)
-create_image(imgd,imgj['05'][2],[0,255,255],'05',2,0)
-create_image(imgd,imgj['05'][3],[0,255,0],'05',3)
-create_image(imgd,imgj['05'][4],[0,255,255],'05',4)
+#create_map(imgd,imgj)
+#create_image(imgd,imgj['05'][2],[0,255,255],'05',2,0)
+#create_image(imgd,imgj['05'][3],[0,255,0],'05',3)
+#create_image(imgd,imgj['05'][4],[0,255,255],'05',4)
 
 def load_annotation(apath):
     imgA = {}
@@ -313,7 +368,7 @@ def add(i1,i2,k,index):
     r1,c1,d1 = i2.shape
     
     r,c = min(r0,r1),min(c0,c1)
-    print(r,c)
+    #print(r,c)
     
     i1 = i1[0:r,0:c,:]
     i2 = i2[0:r,0:c,:]
@@ -335,13 +390,11 @@ def overlap(imgA):
             add(i1,i2,k,i)
 
 
-imgA = load_annotation(annotated_path)
-overlap(imgA)
-add(imgA['05'][3],imgA['05'][4],'05',1)
+#imgA = load_annotation(annotated_path)
+#overlap(imgA)
+#add(imgA['05'][3],imgA['05'][4],'05',1)
 
 
-            
-   
-    
+
 
     
