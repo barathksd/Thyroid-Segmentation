@@ -48,7 +48,7 @@ imgd = load_dicom(dicom_path)
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
-
+#loads jpg files and saves in dict
 def load_jpg(fpath):
     imgj = {}
     for path,subdir,files in os.walk(fpath):
@@ -87,7 +87,7 @@ def img_resize(img,final_shape):
     return rimg
     #print(rimg.shape)
 
-#segments the image based on the 
+# segments the image based on the input points
 def segment(img):
     points = []
     def mousepoint(event,x,y,flags,param): 
@@ -193,13 +193,13 @@ def cut(img):
     cv2.imshow('org',img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    return top, left, bottom
+    return top, bottom, left, right
 
 #cut(imgd['05'][1])
 
 def scale(img):
     
-    top,left,bottom = cut(img)
+    top, bottom, left, right = cut(img)
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     mx = np.max(img[:,:left])
     
@@ -257,20 +257,32 @@ def scale(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def createmap(img):
+def createimage(img,color,k,number):
     top,bottom,left,right = cut(img)
     img = img[top:bottom,left:right]
     img2 = np.zeros(img.shape)
     r,c,d = img.shape
-    
+        
     for i in range(r):
         for j in range(c):
             if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[80,160,256]).sum()>=3:
-                img2[i,j] = np.array([100,200,255])
-    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\map.png',img2)
+                img2[i,j] = np.array(color)
+    cv2.imwrite('D:\\Ito data\\annotated\\'+str(k)+str(number)+'.png',img2)
     cv2.imshow('img',img2)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return img2
+
+def createmap(imgj):
+    for k,v in imgj.items():
+        for i in range(len(v)):
+            if i%2==0:
+                color = [0,0,255]
+            else:
+                color = [0,255,0]
+            createimage(v[i],color,k,i)
+
+            
    
     
 
