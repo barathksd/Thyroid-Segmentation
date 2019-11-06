@@ -257,7 +257,7 @@ def scale(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def createimage(img,color,k,number):
+def create_image(img,color,k,number):
     top,bottom,left,right = cut(img)
     img = img[top:bottom,left:right]
     img2 = np.zeros(img.shape)
@@ -273,7 +273,7 @@ def createimage(img,color,k,number):
     cv2.destroyAllWindows()
     return img2
 
-def createmap(imgj):
+def create_map(imgj):
     for k,v in imgj.items():
         for i in range(len(v)):
             if i%2==0:
