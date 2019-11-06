@@ -22,6 +22,8 @@ import tqdm
 
 dicom_path = 'D:\\Ito data\\AI'
 jpg_path = 'D:\\Ito data\\AI2'
+annotated_path = 'D:\\Ito data\\annotated'
+
 sample = None
 imgdata = None
 
@@ -257,30 +259,86 @@ def scale(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def create_image(img,color,k,number):
-    top,bottom,left,right = cut(img)
+def create_image(imgd,img,color,k,index,c=5):
+    top,bottom,left,right = cut(imgd[k][min(int(index/2),1,c)])          
     img = img[top:bottom,left:right]
     img2 = np.zeros(img.shape)
     r,c,d = img.shape
-        
+    print(r,c,k,index,index/2)
     for i in range(r):
         for j in range(c):
             if (img[i,j]>[0,30,100]).sum()>=3 and (img[i,j]<[80,160,256]).sum()>=3:
                 img2[i,j] = np.array(color)
-    cv2.imwrite('D:\\Ito data\\annotated\\'+str(k)+str(number)+'.png',img2)
-    cv2.imshow('img',img2)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    return img2
-
-def create_map(imgj):
+    cv2.imwrite('D:\\Ito data\\annotated\\'+k+str(index)+'.png',img2)
+#    cv2.imshow('img',img2)
+#    cv2.waitKey(0)
+#    cv2.destroyAllWindows()
+#    return img2
+    
+def create_map(imgd,imgj):
     for k,v in imgj.items():
         for i in range(len(v)):
             if i%2==0:
-                color = [0,0,255]
-            else:
                 color = [0,255,0]
-            createimage(v[i],color,k,i)
+            else:
+                color = [0,255,255]
+            create_image(imgd,v[i],color,k,i)
+
+
+create_map(imgd,imgj)
+create_image(imgd,imgj['05'][2],[0,255,255],'05',2,0)
+create_image(imgd,imgj['05'][3],[0,255,0],'05',3)
+create_image(imgd,imgj['05'][4],[0,255,255],'05',4)
+
+def load_annotation(apath):
+    imgA = {}
+    m = '01'
+    imglist = []
+    for path,subdir,files in os.walk(apath):
+        for file in files:
+            full_path = path+'\\'+file
+            
+            if m != file[:2]:
+                imgA[m] = imglist
+                m = file[:2]
+                imglist = []
+                
+            imglist.append(cv2.imread(full_path))
+        imgA['07'] = imglist
+        return imgA
+
+
+def add(i1,i2,k,index):
+    r0,c0,d0 = i1.shape
+    r1,c1,d1 = i2.shape
+    
+    r,c = min(r0,r1),min(c0,c1)
+    print(r,c)
+    
+    i1 = i1[0:r,0:c,:]
+    i2 = i2[0:r,0:c,:]
+    
+    i3 = cv2.add(i1,i2)
+    cv2.imwrite('D:\\Ito data\\overlap\\'+k+str(index)+'.png',i3)
+#    cv2.imshow('i1',i1)
+#    cv2.imshow('i2',i2)
+#    cv2.imshow('i3',i3)
+#    cv2.waitKey(0)
+#    cv2.destroyAllWindows()
+    
+    
+def overlap(imgA):
+    for k,v in imgA.items():
+        for i in range(2):
+            i1 = v[i*2]
+            i2 = v[i*2+1]
+            add(i1,i2,k,i)
+
+
+imgA = load_annotation(annotated_path)
+overlap(imgA)
+add(imgA['05'][3],imgA['05'][4],'05',1)
+
 
             
    
