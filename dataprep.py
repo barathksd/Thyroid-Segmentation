@@ -20,9 +20,12 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
 import tqdm
 
-dicom_path = 'D:\\Ito data\\AI'
-jpg_path = 'D:\\Ito data\\AI2'
-annotated_path = 'D:\\Ito data\\annotated'
+base = 'D:\\Ito data\\'
+
+dicom_path = base + 'AI'
+jpg_path = base + 'AI2'
+annotated_path = base + 'annotated'
+overlap_path = base + 'overlap'
 
 sample = None
 imgdata = None
