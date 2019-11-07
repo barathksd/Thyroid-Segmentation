@@ -395,6 +395,54 @@ def overlap(imgA):
 #add(imgA['05'][3],imgA['05'][4],'05',1)
 
 
-
+def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-solid lesions 0-other
+    imglist = []
+    #thyroid green 
+    #outline yellow
+    #papillary red 
+    #benign blue 252,3,22
+    #cyst violet 239,27,218
+    #solid-lesion pale white 180,207,216
+    
+    for path, subdir, files in os.walk(overlap_path):
+        fimg_list = []
+        for file in files:
+            full_path = path + '\\' + file
+            img = cv2.imread(full_path)     
+            #reshape(img)
+            r,c,d = img.shape
+            
+            fimg = np.uint8(np.zeros([r,c]))
+            
+            for i in range(r):
+                for j in range(c):
+                    b,g,r = img[i,j]
+                    
+                    if g>2*r and g > 2*b:            # green thyroid 1
+                        fimg[i,j] = 1
+                        
+                    elif r>2*g and r>2*b:            # red papillary 2
+                        fimg[i,j] = 2 
+                        
+                    elif b<60 and g<60 and r<60:     # black other 0
+                        fimg[i,j] = 0
+                        
+                    elif b>200 and b>3*g and b>3*r:  # blue benign 3 
+                        fimg[i,j] = 3
+                        
+                    elif b>180 and r>180 and g<80:   # violet cyst 4
+                        fimg[i,j] = 4
+                        
+                    elif r>180 and g>180 and b>150:  # pale white solid-lesion 5
+                        fimg[i,j] = 5
+                        
+                    elif r>200 and g>200 and b<60:   # yellow outline 1
+                        fimg[i,j] = 1
+                        
+            fimg = to_categorical(fimg,fd)
+            fimg_list.append(fimg)
+            return fimg_list
+final_dim = 6
+fhot = one_hot(overlap_path,final_dim)
 
     
