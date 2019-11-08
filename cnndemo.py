@@ -21,12 +21,13 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import f1_score, confusion_matrix, precision_score, recall_score, jaccard_score
 from keras.datasets import mnist
 from tensorflow.keras.callbacks import *
+
 sys.path.append('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles')
-import mnistprep
+from mnistprep import img_train,label_train,img_test,label_test
 
 batch_size = 16
 num_classes = 20
-epochs = 8
+epochs = 7
 #data_augmentation = True
 #num_predictions = 20
 #save_dir = os.path.join(os.getcwd(), 'saved_models')
@@ -138,7 +139,7 @@ def train(x_train,y_train,x_test,y_test):
         
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
        
-    model.compile(loss=ioc_loss,
+    model.compile(loss='categorical_crossentropy',
                       optimizer=opt,
                       metrics=['accuracy',f1])
     
@@ -156,9 +157,6 @@ def train(x_train,y_train,x_test,y_test):
     model.save('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel.h5')
 
 train(x_train,y_train,x_test,y_test)
-
-
-
 
 
 
