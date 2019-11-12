@@ -26,50 +26,70 @@ dicom_path = base + 'AI'
 jpg_path = base + 'AI2'
 annotated_path = base + 'annotated'
 overlap_path = base + 'overlap'
+final_dim = 6
 
 sample = None
 imgdata = None
+
 #loads data from folder and saves it in dict, key is patientID, value is images in list
-def load_dicom(fpath):    
-    global imgdata,sample
-    imgd = {}
-    for path,subdir,files in os.walk(fpath):
-        name = os.path.basename(path)
-        imglist = []
-        for file in files:
-            full_path = path+ '\\' + file
-            if int(file.replace('Image',''))%2 != 0:
-                imgdata = pydicom.read_file(full_path)
-                if sample == None:
-                    sample = imgdata
-                img = imgdata.pixel_array
-                imglist.append(img[40:-40,:,:])
-        if len(imglist) != 0:
-            imgd[name] = imglist
-    return imgd
-imgd = load_dicom(dicom_path)
+def loadimg(fpath,ftype):
+    
+    global sample
+    imgdict = {}
+    if ftype == 'dicom':
+        for path,subdir,files in os.walk(fpath):
+            name = os.path.basename(path)
+            imglist = []
+            for file in files:
+                full_path = path+ '\\' + file
+                if int(file.replace('Image',''))%2 != 0:
+                    imgdata = pydicom.read_file(full_path)
+                    if sample == None:
+                        sample = imgdata
+                    img = imgdata.pixel_array
+                    imglist.append(img[40:-40,:,:])
+                    
+            if len(imglist) != 0:
+                imgdict[name] = imglist
+                
+    elif ftype == 'jpg':
+        for path,subdir,files in os.walk(fpath):
+            name = os.path.basename(path)
+            imglist = []
+            for file in files:
+                full_path = path+ '\\' + file
+                
+                if '.jpg' in full_path and 'red' in full_path:
+                    img = cv2.imread(full_path)
+                    imglist.append(img[40:-40,:,:])
+                
+            if len(imglist) != 0:
+                imgdict[name] = imglist
+                
+    elif ftype == 'annotation':
+        print('annotation')
+        m = '01'
+        for path,subdir,files in os.walk(fpath):
+            for file in files:
+                full_path = path+'\\'+file
+                
+                if m != file[:2]:
+                    imgdict[m] = imglist
+                    m = file[:2]
+                    imglist = []
+                    
+                imglist.append(cv2.imread(full_path))
+            imgdict['07'] = imglist
+            
+    return imgdict
+
+imgd = loadimg(dicom_path,'dicom')
+
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
 
-def load_jpg(fpath):
-    imgj = {}
-    for path,subdir,files in os.walk(fpath):
-        name = os.path.basename(path)
-        imglist = []
-        for file in files:
-            full_path = path+ '\\' + file
-            
-            if '.jpg' in full_path and 'red' in full_path:
-                img = cv2.imread(full_path)
-                imglist.append(img[40:-40,:,:])
-            
-        if len(imglist) != 0:
-            imgj[name] = imglist
-    return imgj
-            
-
-imgj = load_jpg(jpg_path)
+#imgj = loadimg(jpg_path,'jpg')
 
 # resizes image while maintaining aspect ratio
 def img_resize(img,final_shape):
@@ -239,7 +259,7 @@ def cut(img):
             right = r
             break
 #    cut_img = img[top:bottom, left:right]
-    
+#    
 #    cv2.imshow('image',cut_img)
 #    cv2.imshow('org',img)
 #    cv2.waitKey(0)
@@ -249,70 +269,80 @@ def cut(img):
 
 
 def scale(img):
-    
+    i2 = img.copy()
+    i1 = img.copy()
     top,bottom,left,right = cut(img)
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    mask = cv2.inRange(img,180,255)
+    img[mask==0]=0
     mx = np.max(img[:,:left])
-    
+    minmax = np.min([200,mx])
     print(top,left,mx,img.shape)
     
     j = top - 10
     s = j
     length = 0
     repetition = 0
-    col = 0
+    col = []
+    ll = []
     row = 0
     length_prev = 0
     for i in range(left):
         j = np.max([0,top - 10])
-        s = j
+        s = 0
         length = 0
         repetition = 0
         length_prev = 0
-        #print(i,' *')
         while j>=0 and j<(bottom -10):
             j += 1
-            minmax = np.min([200,mx])
             
             if img[j,i]> minmax:
                 #print(' ## ',i,j)
                 
                 #print('-- ',i,j,img[j,i],minmax,j,s,l,n,col)
                 if s==0 and s!=j:
+                    #print('a__0',i,j)
                     s = j
                     j += 15
                 
-                elif length==0 and s!=j:
-                    
+                elif length==0 and s!=j  and np.average(img[j-s:j,i])>10 and np.average(img[j-s:j,i])<100:
+                    #print('a__1',np.average(img[j-s:j,i]),i,j,s,length)
                     length = (j-s)
                     s = j
                     j += 15
                     
-                elif (j-s)>0.9*length and  (j-s)<1.1*length:
-                    
+                elif length!=0 and (j-s)>0.9*length and  (j-s)<1.10*length and length>15 and np.average(img[j-s:j,i])>=10 and np.average(img[j-s:j,i])<100:
+                    print('a__2',np.average(img[j-s:j,i]),i,j,s,length)
                     length_prev = length
                     length = j-s
-                    s = j
-                    repetition += 1
-                    j += 15
-                    if repetition >= 3:
-                        row = j
-                        col = i
-                        break
-                elif (j-s)<=0.9*length or (j-s)>=1.1*length:
                     
+                    s = j
+                    repetition += 1                    
+                    if repetition >= 3:
+                        ll.append((length_prev,length))
+                        print(i,j,s,length)
+                        row = j
+                        col.append(i)
+                        repetition = 0
+                        print('')
+                        break
+                    
+                    j += 15
+                elif length!= 0 and ((j-s)<=0.9*length or (j-s)>=1.1*length):
+                    #print('a__3',i,j,s,length)
                     length = j-s
                     s = j
                     j += 15
-        if col != 0:
+                    
+        if len(col)!=0:
             break
         
-        
-    print(col,length,length_prev)
-    if col!=0:
-        cv2.imshow('scale',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
-        cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\scale.png',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
-    cv2.imshow('org',img)
+    print(col,ll)
+    if len(col)!=0:
+        cv2.imshow('scale',np.concatenate((np.concatenate((np.zeros([row+15,100]),img[0:row+15,col[-1]:col[-1]+1]),axis=1),np.zeros([row+15,100])),axis=1))
+        #cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\scale.png',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
+    i2[:,col] = [0,100,255]
+    cv2.imshow('org',i2[:bottom-10,:left])
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -348,22 +378,6 @@ def create_map(imgd,imgj):
 #create_image(imgd,imgj['05'][3],[0,255,0],'05',3)
 #create_image(imgd,imgj['05'][4],[0,255,255],'05',4)
 
-def load_annotation(apath):
-    imgA = {}
-    m = '01'
-    imglist = []
-    for path,subdir,files in os.walk(apath):
-        for file in files:
-            full_path = path+'\\'+file
-            
-            if m != file[:2]:
-                imgA[m] = imglist
-                m = file[:2]
-                imglist = []
-                
-            imglist.append(cv2.imread(full_path))
-        imgA['07'] = imglist
-        return imgA
 
 
 def add(i1,i2,k,index):
@@ -391,12 +405,11 @@ def overlap(imgA):
             i1 = v[i*2]
             i2 = v[i*2+1]
             add(i1,i2,k,i)
-
-
-#imgA = load_annotation(annotated_path)
+            
+#imgA = loadimg(annotated_path,'annotation')
+#
 #overlap(imgA)
 #add(imgA['05'][3],imgA['05'][4],'05',1)
-
 
 def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-solid lesions 0-other
     imglist = []
@@ -445,7 +458,13 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
             fimg = to_categorical(fimg,fd)
             fimg_list.append(fimg)
             return fimg_list
-final_dim = 6
-fhot = one_hot(overlap_path,final_dim)
+
+for i in range(1,8):
+    print('\n        ------      ',i)
+    scale(imgd['0'+str(i)][1])
+#fhot = one_hot(overlap_path,final_dim)
+
+
+
 
     
