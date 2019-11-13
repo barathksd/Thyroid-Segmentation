@@ -15,9 +15,11 @@ import pydicom
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras.preprocessing.image import load_img, save_img, img_to_array, array_to_img
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
+from tensorflow.keras.models import model_from_json
 import tqdm
 
 base = 'D:\\Ito data\\'
@@ -88,6 +90,14 @@ imgd = loadimg(dicom_path,'dicom')
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
+def load_model():
+    model = model_from_json(open('model.json').read())
+    model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
+    opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+    return model
 
 #imgj = loadimg(jpg_path,'jpg')
 
@@ -268,16 +278,15 @@ def cut(img):
 
 
 
-def scale(img):
+def scale(img,top,bottom,left):
     i2 = img.copy()
-    i1 = img.copy()
-    top,bottom,left,right = cut(img)
+    
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    mask = cv2.inRange(img,180,255)
+    mask = cv2.inRange(img,160,255)
     img[mask==0]=0
     mx = np.max(img[:,:left])
     minmax = np.min([200,mx])
-    print(top,left,mx,img.shape)
+    print(top,bottom,left,mx,img.shape)
     
     j = top - 10
     s = j
@@ -312,21 +321,21 @@ def scale(img):
                     j += 15
                     
                 elif length!=0 and (j-s)>0.9*length and  (j-s)<1.10*length and length>15 and np.average(img[j-s:j,i])>=10 and np.average(img[j-s:j,i])<100:
-                    print('a__2',np.average(img[j-s:j,i]),i,j,s,length)
+                    #print('a__2',np.average(img[j-s:j,i]),i,j,s,length)
                     length_prev = length
                     length = j-s
                     
-                    s = j
+                    
                     repetition += 1                    
                     if repetition >= 3:
-                        ll.append((length_prev,length))
-                        print(i,j,s,length)
+                        ll.append((j,length,length_prev))
+                        print('* ',i,j,s,s-length_prev)
                         row = j
                         col.append(i)
                         repetition = 0
                         print('')
                         break
-                    
+                    s = j
                     j += 15
                 elif length!= 0 and ((j-s)<=0.9*length or (j-s)>=1.1*length):
                     #print('a__3',i,j,s,length)
@@ -342,9 +351,10 @@ def scale(img):
         cv2.imshow('scale',np.concatenate((np.concatenate((np.zeros([row+15,100]),img[0:row+15,col[-1]:col[-1]+1]),axis=1),np.zeros([row+15,100])),axis=1))
         #cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\scale.png',cv2.resize(img[0:row+15,col-32:col+32], dsize=(128,2*(row+15))))
     i2[:,col] = [0,100,255]
-    cv2.imshow('org',i2[:bottom-10,:left])
+    cv2.imshow('org',i2[max(top-10,0):ll[0][0]+30,:left])
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    return col[0],ll[0]
 
 
 def create_image(imgd,img,color,k,index,c=5):
@@ -459,9 +469,40 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
             fimg_list.append(fimg)
             return fimg_list
 
-for i in range(1,8):
-    print('\n        ------      ',i)
-    scale(imgd['0'+str(i)][1])
+model = load_model()
+
+img = imgd['06'][1]
+top,bottom,left,right = cut(img)
+
+col,ll = scale(img,top,bottom,left)
+
+def extract(img,col):
+    isides = []
+    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    i1 = img[max(top-10,0):min(ll[0]+30,bottom),col:col+1]
+    
+    row,column = i1.shape
+    peak = []
+    m = 0
+    s = 0
+    for r in range(row):    
+        if i1[r,0] >= 140:
+            m = r
+            s += 1
+        elif m!=0:
+            peak.append(m-round(s/2))
+            s = 0
+            m = 0
+    
+    print(peak,i1.shape)
+    for pos in peak:
+        lside = img[pos-6:pos+22,col-30:col-2]
+        rside = img[pos-6:pos+22,col+5:col+33]
+        isides.append((pos,lside,rside))
+    
+extract(img,col)
+    
+    
 #fhot = one_hot(overlap_path,final_dim)
 
 
