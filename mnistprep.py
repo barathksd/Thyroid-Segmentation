@@ -22,14 +22,14 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import f1_score, confusion_matrix, precision_score, recall_score, jaccard_score
 from keras.datasets import mnist
 from sklearn.cluster import KMeans
-
+from tensorflow.keras.models import load_model
 
 #import cnndemo
 
 
-def load_model():
-    model = model_from_json(open('model.json').read())
-    model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
+def load_model2():
+    model = load_model('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel2.hdf5')
+    model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights2.hdf5')
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
@@ -128,8 +128,8 @@ for j in range(J):
     aug_x_extra_test[j] = image_augument(x_extra_test[j])
   
 train_order = np.random.permutation([i for i in range(60000+I)])
-img_train = np.concatenate([aug_x_train, aug_x_extra_train])[train_order].reshape(60000+I,28,28,1)[:100000]
-label_train = np.concatenate([y_train, y_extra_train])[train_order].reshape(60000+I)[:100000]
+img_train = np.concatenate([aug_x_train, aug_x_extra_train])[train_order].reshape(60000+I,28,28,1)[:80000]
+label_train = np.concatenate([y_train, y_extra_train])[train_order].reshape(60000+I)[:80000]
 
 test_order = np.random.permutation([j for j in range(10000+J)])
 img_test = np.concatenate([aug_x_test, aug_x_extra_test])[test_order].reshape(10000+J,28,28,1)[:16000]
@@ -139,14 +139,15 @@ label_test = np.concatenate([y_test, y_extra_test])[test_order].reshape(10000+J)
 def newimg():
     isides = {}
     ilabels = {}
-    path = 'C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles'
+    path = 'C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\index'
     for path,subdir,files in os.walk(path):
         for file in files:
             if 'index' in file:
                 fp = path + '\\' + file
                 index = int(file.replace('index','').replace('.jpg',''))
+            
                 isides[index] = cv2.cvtColor(cv2.imread(fp),cv2.COLOR_BGR2GRAY)
-                ilabels[index] = 21
+                ilabels[index] = 20
         break
     for i in [1,30,62]:
         ilabels[i] = 0
@@ -158,6 +159,7 @@ def newimg():
         ilabels[i] = 3
     
     keys = np.array(list(ilabels.keys()))
+    
     keys = np.repeat(keys,250)
     keys = np.random.permutation(keys)
     trset = np.array([isides[k] for k in keys])

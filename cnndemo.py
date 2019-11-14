@@ -21,13 +21,13 @@ from tensorflow.keras.utils import to_categorical
 from sklearn.metrics import f1_score, confusion_matrix, precision_score, recall_score, jaccard_score
 from keras.datasets import mnist
 from tensorflow.keras.callbacks import *
-
+import sys
 sys.path.append('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles')
 from mnistprep import img_train,label_train,img_test,label_test
 
 batch_size = 16
-num_classes = 20
-epochs = 7
+num_classes = 21
+epochs = 1
 #data_augmentation = True
 #num_predictions = 20
 #save_dir = os.path.join(os.getcwd(), 'saved_models')
@@ -98,7 +98,7 @@ def nnBlock(input_shape):
     model.add(Dropout(0.25))
     
     model.add(Flatten())
-    model.add(Dense(256))
+    model.add(Dense(168))
     model.add(Activation('relu'))
     model.add(Dropout(0.25))
     model.add(Dense(num_classes))
@@ -110,15 +110,14 @@ def save_model(model):
     json_string = model.to_json()
     open('model.json', 'w').write(json_string)
     
-def load_model():
-    model = model_from_json(open('model.json').read())
+def load_model2():
+    model = load_model('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel.h5')
     model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
-    model.compile(loss=ioc_loss,
+    model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
-                  metrics=['accuracy',f1])
+                  metrics=['accuracy'])
     return model
-
 
 def train(x_train,y_train,x_test,y_test):
 
@@ -135,13 +134,14 @@ def train(x_train,y_train,x_test,y_test):
     print(x_train.shape,x_test.shape,y_train.shape,y_test.shape)
     
     model = nnBlock((28,28,1))
+    model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights2.hdf5')
     print(model.summary())
         
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
        
     model.compile(loss='categorical_crossentropy',
                       optimizer=opt,
-                      metrics=['accuracy',f1])
+                      metrics=['accuracy'])
     
     checkpointer = ModelCheckpoint(filepath="C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5", 
                                    monitor = 'val_accuracy',
@@ -157,6 +157,9 @@ def train(x_train,y_train,x_test,y_test):
     model.save('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel.h5')
 
 train(x_train,y_train,x_test,y_test)
+
+
+
 
 
 
