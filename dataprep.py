@@ -476,11 +476,13 @@ top,bottom,left,right = cut(img)
 
 col,ll = scale(img,top,bottom,left)
 
+
 def extract(img,col):
     isides = []
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     i1 = img[max(top-10,0):min(ll[0]+30,bottom),col:col+1]
-    
+    mask = cv2.inRange(img,100,255)
+    img[mask == 0] = 0
     row,column = i1.shape
     peak = []
     m = 0
@@ -495,12 +497,48 @@ def extract(img,col):
             m = 0
     
     print(peak,i1.shape)
+    
+    d = 0
+    m = ''
+    dist = []
+    l0 = 0
+    r0 = 0
     for pos in peak:
-        lside = img[pos-6:pos+22,col-30:col-2]
+        lside = img[pos-6:pos+22,col-29:col-1]
         rside = img[pos-6:pos+22,col+5:col+33]
         isides.append((pos,lside,rside))
+        l = num_dict[np.argmax(model.predict(lside.reshape(1,28,28,1)/255))]
+        r = num_dict[np.argmax(model.predict(rside.reshape(1,28,28,1)/255))]
+        #print(pos,d)
+        if l == 0 and m=='':
+            m = 'l'
+            d = pos
+        elif r == 0 and m=='':
+            m = 'r'
+            d = pos
+        elif m=='l' and (l == 1 or l == 2 or l == 0.5):
+            #print((pos-d)/(l-l0),m,l,l0,pos)
+            dist.append((pos-d)/(l-l0))
+            d = pos
+            l0 = l
+            
+        elif m=='r' and (r == 1 or r == 2 or r == 0.5):
+            #print((pos-d)/(r-r0),m,r,r0,pos)
+            dist.append((pos-d)/(r-r0))
+            d = pos
+            r0 = r
+            
+#        cv2.imshow('l',lside)
+#        cv2.imshow('r',rside)
+#        cv2.waitKey(0)
+#        cv2.destroyAllWindows()
+    return peak,dist
+        
     
-extract(img,col)
+peak,dist = extract(img,col)
+d_avg = np.average(dist)
+    
+    
     
     
 #fhot = one_hot(overlap_path,final_dim)
