@@ -19,7 +19,7 @@ from tensorflow import keras
 from tensorflow.keras.preprocessing.image import load_img, save_img, img_to_array, array_to_img
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
-from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import model_from_json,load_model
 import tqdm
 
 base = 'D:\\Ito data\\'
@@ -90,15 +90,14 @@ imgd = loadimg(dicom_path,'dicom')
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
-def load_model():
-    model = model_from_json(open('model.json').read())
+def load_model2():
+    model = load_model('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel.h5')
     model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
                   metrics=['accuracy'])
     return model
-
 #imgj = loadimg(jpg_path,'jpg')
 
 # resizes image while maintaining aspect ratio
