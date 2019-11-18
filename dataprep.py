@@ -538,10 +538,21 @@ peak,dist = extract(img,col)
 d_avg = np.average(dist)
     
     
-    
-    
 #fhot = one_hot(overlap_path,final_dim)
 
+def img_resize(img,d_avg,final_shape):
+    
+    m,n = img.shape
+    m2,n2 = np.int32(np.round([m*120/d_avg,n*120/d_avg]))
+    img = cv2.resize(img,(n2,m2))
+    img = cv2.copyMakeBorder(img, int((final_shape-m2)/2), int((final_shape-m2+1)/2), int((final_shape-n2)/2), int((final_shape-n2+1)/2), cv2.BORDER_CONSTANT) 
+    
+    assert img.shape == (final_shape,final_shape)
+    
+    return img
+
+
+img = img_resize(img[top:bottom,left:right],d_avg,512)
 
 
 
