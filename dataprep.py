@@ -468,12 +468,20 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
             fimg_list.append(fimg)
             return fimg_list
 
-model = load_model()
+model = load_model2()
+#print(model.summary())
 
-img = imgd['06'][1]
-top,bottom,left,right = cut(img)
+num_dict = {}
+for i in range(10):
+    num_dict[i] = i
+    num_dict[10+i] = i+0.5
 
-col,ll = scale(img,top,bottom,left)
+num_dict[21] = -1
+#img = imgd['03'][1]
+#top,bottom,left,right = cut(img)
+#
+#col,ll = scale(img,top,bottom,left)
+
 
 
 def extract(img,col):
