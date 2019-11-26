@@ -514,8 +514,10 @@ def extract(img,col):
         lside = img[pos-6:pos+22,col-29:col-1]
         rside = img[pos-6:pos+22,col+5:col+33]
         isides.append((pos,lside,rside))
-        l = num_dict[np.argmax(model.predict(lside.reshape(1,28,28,1)/255))]
-        r = num_dict[np.argmax(model.predict(rside.reshape(1,28,28,1)/255))]
+        if lside.shape == (28,28) and rside.shape == (28,28):
+            l = num_dict[np.argmax(model.predict(lside.reshape(1,28,28,1)/255))]
+        
+            r = num_dict[np.argmax(model.predict(rside.reshape(1,28,28,1)/255))]
         #print(pos,d)
         if l == 0 and m=='':
             m = 'l'
