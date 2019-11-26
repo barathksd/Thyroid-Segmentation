@@ -476,24 +476,26 @@ for i in range(10):
     num_dict[i] = i
     num_dict[10+i] = i+0.5
 
-num_dict[21] = -1
+num_dict[20] = -1
 #img = imgd['03'][1]
 #top,bottom,left,right = cut(img)
 #
 #col,ll = scale(img,top,bottom,left)
 
 
-
 def extract(img,col):
-    isides = []
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+   
+    
     i1 = img[max(top-10,0):min(ll[0]+30,bottom),col:col+1]
     mask = cv2.inRange(img,100,255)
     img[mask == 0] = 0
+    img = img[max(top-10,0):min(ll[0]+30,bottom),:]
+    
     row,column = i1.shape
     peak = []
     m = 0
     s = 0
+    
     for r in range(row):    
         if i1[r,0] >= 140:
             m = r
@@ -503,53 +505,52 @@ def extract(img,col):
             s = 0
             m = 0
     
-    print(peak,i1.shape)
-    
+    #print(peak,i1.shape)
     d = 0
     m = ''
     dist = []
     l0 = 0
     r0 = 0
     for pos in peak:
-        lside = img[pos-6:pos+22,col-29:col-1]
-        rside = img[pos-6:pos+22,col+5:col+33]
-        isides.append((pos,lside,rside))
+        lside = img[pos-14:pos+14,col-29:col-1]
+        rside = img[pos-14:pos+14,col+1:col+29]
         if lside.shape == (28,28) and rside.shape == (28,28):
             l = num_dict[np.argmax(model.predict(lside.reshape(1,28,28,1)/255))]
         
             r = num_dict[np.argmax(model.predict(rside.reshape(1,28,28,1)/255))]
-        #print(pos,d)
-        if l == 0 and m=='':
-            m = 'l'
-            d = pos
-        elif r == 0 and m=='':
-            m = 'r'
-            d = pos
-        elif m=='l' and (l == 1 or l == 2 or l == 0.5):
-            #print((pos-d)/(l-l0),m,l,l0,pos)
-            dist.append((pos-d)/(l-l0))
-            d = pos
-            l0 = l
+           
+            if l == 0 and m=='':
+                m = 'l'
+                d = pos
+            elif r == 0 and m=='':
+                m = 'r'
+                d = pos
+            elif m=='l' and (l == 1 or l == 2 or l == 0.5):
+                #print((pos-d)/(l-l0),m,l,l0,pos)
+                dist.append((pos-d)/(l-l0))
+                d = pos
+                l0 = l
+                
+            elif m=='r' and (r == 1 or r == 2 or r == 0.5):
+                #print((pos-d)/(r-r0),m,r,r0,pos)
+                dist.append((pos-d)/(r-r0))
+                d = pos
+                r0 = r
             
-        elif m=='r' and (r == 1 or r == 2 or r == 0.5):
-            #print((pos-d)/(r-r0),m,r,r0,pos)
-            dist.append((pos-d)/(r-r0))
-            d = pos
-            r0 = r
-            
-#        cv2.imshow('l',lside)
-#        cv2.imshow('r',rside)
-#        cv2.waitKey(0)
-#        cv2.destroyAllWindows()
+        cv2.imshow('l',lside)
+        cv2.imshow('r',rside)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     return peak,dist
         
     
-peak,dist = extract(img,col)
+peak,dist = extract(img.copy(),col)
 d_avg = np.average(dist)
-    
+print(d_avg)
     
 #fhot = one_hot(overlap_path,final_dim)
 
+# resizes image while maintaining aspect ratio
 def img_resize(img,d_avg,final_shape):
     
     m,n = img.shape
@@ -563,6 +564,10 @@ def img_resize(img,d_avg,final_shape):
 
 
 img = img_resize(img[top:bottom,left:right],d_avg,512)
+cv2.imshow('i3',img)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
 
 
 
