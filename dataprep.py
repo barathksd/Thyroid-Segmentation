@@ -374,6 +374,13 @@ def img_resize(img,d_avg,final_shape):
     
     return img
 
+# augment the images with their mirror-image 
+def flip(fpath):
+    for path,subdir,files in os.walk(fpath):
+        for file in files:
+            full_path = path+ '\\' + file
+            flipimg = cv2.flip(cv2.imread(full_path), 1)
+            cv2.imwrite('.jpg',flipimg)
     
 # cnn model trained on decimal mnist
 model = load_model2()
