@@ -303,7 +303,7 @@ def scale(img,top,bottom,left):
 
 
 # Extract the pixels of the scale and measure the distance if there is a number beside it
-def extract(img,col):
+def extract(img,col,top,bottom,ll):
    
     i1 = img[max(top-10,0):min(ll[0]+30,bottom),col:col+1]
     mask = cv2.inRange(img,100,255)
@@ -381,7 +381,7 @@ def flip(fpath):
             full_path = path+ '\\' + file
             flipimg = cv2.flip(cv2.imread(full_path), 1)
             cv2.imwrite('.jpg',flipimg)
-    
+
 # cnn model trained on decimal mnist
 model = load_model2()
 
@@ -405,7 +405,7 @@ print(bottom-top,right-left)
 col,ll = scale(img,top,bottom,left)
 # Convert image to gray scale
 img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-peak,dist = extract(img.copy(),col)
+peak,dist = extract(img.copy(),col,top,bottom,ll)
 d_avg = np.average(dist)
 print(d_avg)
 
