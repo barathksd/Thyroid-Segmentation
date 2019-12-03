@@ -393,7 +393,7 @@ for i in range(10):
 
 num_dict[20] = -1
 
-path = '/home/barath/Downloads/Thyroid/AI2/01/Image009.jpg'
+path = '/home/barath/Downloads/Thyroid/AI2/01/Image003.jpg'
 img = cv2.imread(path)[40:-40,:]
 
 
