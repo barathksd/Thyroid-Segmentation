@@ -6,7 +6,7 @@ Created on Tue Oct  8 17:28:45 2019
 """
 
 
-
+import skimage.io as io
 import sys
 import os
 import cv2
@@ -19,7 +19,7 @@ from tensorflow import keras
 from tensorflow.keras.preprocessing.image import load_img, save_img, img_to_array, array_to_img
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
-from tensorflow.keras.models import model_from_json,load_model
+from tensorflow.keras.models import model_from_json, load_model
 import tqdm
 
 base = 'D:\\Ito data\\'
@@ -37,13 +37,11 @@ imgdata = None
 def loadimg(fpath,ftype):
     
     global sample
-    imgdict = {}       # Dictionary - key = Patient Number(String) Value = Patient Images(List)
-    
-    #Load Dicom Images
+    imgdict = {}
     if ftype == 'dicom':
         for path,subdir,files in os.walk(fpath):
-            name = os.path.basename(path)  # Patient ID as Key
-            imglist = []                   # List of Patient Images
+            name = os.path.basename(path)
+            imglist = []
             for file in files:
                 full_path = path+ '\\' + file
                 if int(file.replace('Image',''))%2 != 0:
@@ -51,28 +49,28 @@ def loadimg(fpath,ftype):
                     if sample == None:
                         sample = imgdata
                     img = imgdata.pixel_array
-                    imglist.append(img[40:-40,:,:]) # cut the top and bottom borders (40 px)
+                    imglist.append(img[40:-40,:,:])
                     
             if len(imglist) != 0:
-                imgdict[name] = imglist   # Dict[key] = List
-    
-    #Load raw Jpeg Images
+                imgdict[name] = imglist
+                
     elif ftype == 'jpg':
         for path,subdir,files in os.walk(fpath):
-            name = os.path.basename(path)  # Patient ID as Key
-            imglist = []                   # List of Patient Images
+            name = os.path.basename(path)
+            imglist = []
             for file in files:
                 full_path = path+ '\\' + file
+                
                 if '.jpg' in full_path and 'red' in full_path:
                     img = cv2.imread(full_path)
-                    imglist.append(img[40:-40,:,:]) # cut the top and bottom borders (40 px)
+                    imglist.append(img[40:-40,:,:])
                 
             if len(imglist) != 0:
-                imgdict[name] = imglist   # Dict[key] = List
+                imgdict[name] = imglist
                 
-    #Load Annotated Images
     elif ftype == 'annotation':
-        m = '01'                          # Patient ID as Key
+        print('annotation')
+        m = '01'
         for path,subdir,files in os.walk(fpath):
             for file in files:
                 full_path = path+'\\'+file
@@ -87,21 +85,21 @@ def loadimg(fpath,ftype):
             
     return imgdict
 
-#imgd = loadimg(dicom_path,'dicom')
+imgd = loadimg(dicom_path,'dicom')
 
 clr = np.random.rand(8,3)*255
 maskcolor = dict((i+1,clr[i]) for i in range(8))
 
 def load_model2():
-    model = load_model('/home/barath/Downloads/home/barath/Downloads/mymodel.h5')
-    model.load_weights('/home/barath/Downloads/home/barath/Downloads/best_weights.hdf5')
+    model = load_model('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\mymodel.h5')
+    model.load_weights('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\best_weights.hdf5')
     opt = keras.optimizers.Adam(lr=0.0002, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0, amsgrad=False)
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
                   metrics=['accuracy'])
     return model
-#imgj = loadimg(jpg_path,'jpg')
 
+#imgj = loadimg(jpg_path,'jpg')
 
 
 #segments the image based on the input points
@@ -164,20 +162,63 @@ def segment(img):
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()
     
-# Cut out the relevant portion of image
-def cut(img):  # image has dimension (length,breadth,3) 3 = BGR
+
+def cut_alt(img):
+    e1 = cv2.Sobel(img, cv2.CV_32F, 1, 0, ksize=3)
+    e1 = np.uint8(cv2.cvtColor(e1,cv2.COLOR_BGR2GRAY))
+#    e1[e1>=100] = 255
+#    e1[e1<100] = 0
     
-    # Sum the color modes, B+G+R, resulting dimension (length,breadth,1) 
+    e = np.where(e1.sum(axis=1)/(255*e1.shape[1])>0.3)[0]
+    top = e[0]
+    tot = 0
+    print(e)
+    for i in range(e[0],e[0]+10):
+        if i in e:
+            tot += 1
+        else:
+            tot = 0
+        if tot >= 7:
+            top = i
+    #print(e)
+    ec = e1.sum(axis=0)/(255*e1.shape[0])
+    print(np.round(ec*100))
+    i = 0
+    left = False
+    right = False
+    li = int(e1.shape[1]/2)
+    ri = int(e1.shape[1]/2)
+    for i in range(int(e1.shape[1]/2)):
+        if left == False:
+            li = int(e1.shape[1]/2-i)
+            if ec[li]<0.1:
+                left = True
+        if right == False:
+            ri = int(e1.shape[1]/2+i)
+            if ec[ri]<0.1:
+                right = True
+    print(li,ri)
+    cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\demo.png',e1)
+    
+    cv2.imshow('img',img[top:,li:ri])
+    cv2.imshow('img2',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+
+
+def cut(img):
+
     mono_img = np.sum(img, axis=2)
+    #bin_img = np.sign(np.where((mono_img>140)&(mono_img<170), 0, mono_img))
     
     row_activate = np.zeros(mono_img.shape[0])
     col_activate = np.zeros(mono_img.shape[1])
     
     for row in range(mono_img.shape[0]):
-        #Count the number of unique values in each row
         row_activate[row] = len(np.unique(mono_img[row]))
     for col in range(mono_img.shape[1]):
-        #Count the number of unique values in each column
         col_activate[col] = len(np.unique(mono_img[:,col]))
     
     judge_len = 30
@@ -187,7 +228,6 @@ def cut(img):  # image has dimension (length,breadth,3) 3 = BGR
     
     top = 0
     bottom = mono_img.shape[0]-1
-    
     for t in range(mono_img.shape[0]-judge_len):
         if all(row_activate[t:t+judge_len] >= min_unique_1):
             top = t
@@ -210,12 +250,13 @@ def cut(img):  # image has dimension (length,breadth,3) 3 = BGR
             right = r
             break
 #    cut_img = img[top:bottom, left:right]
-#    
+    
 #    cv2.imshow('image',cut_img)
 #    cv2.imshow('org',img)
 #    cv2.waitKey(0)
 #    cv2.destroyAllWindows()
     return top, bottom, left, right
+
 
 
 # Extract the column corresponding to the scale 
@@ -304,7 +345,17 @@ def scale(img,top,bottom,left):
 
 # Extract the pixels of the scale and measure the distance if there is a number beside it
 def extract(img,col,top,bottom,ll):
-   
+   # cnn model trained on decimal mnist
+    model = load_model2()
+
+     # maps model output to numbers
+    num_dict = {}
+    for i in range(10):
+        num_dict[i] = i
+        num_dict[10+i] = i+0.5
+
+    num_dict[20] = -1
+    
     i1 = img[max(top-10,0):min(ll[0]+30,bottom),col:col+1]
     mask = cv2.inRange(img,100,255)
     img[mask == 0] = 0
@@ -381,39 +432,29 @@ def flip(fpath):
             full_path = path+ '\\' + file
             flipimg = cv2.flip(cv2.imread(full_path), 1)
             cv2.imwrite('.jpg',flipimg)
-
-# cnn model trained on decimal mnist
-model = load_model2()
-
-# maps model output to numbers
-num_dict = {}
-for i in range(10):
-    num_dict[i] = i
-    num_dict[10+i] = i+0.5
-
-num_dict[20] = -1
-
-path = '/home/barath/Downloads/Thyroid/AI2/01/Image003.jpg'
-img = cv2.imread(path)[40:-40,:]
+    
 
 
-top,bottom,left,right = cut(img)
-print(bottom-top,right-left)
+#path = 'D:\\Ito data\\AI2\\01\\Image003.jpg'
+#img = cv2.imread(path)[40:-40,:]
+#
+#
+#top,bottom,left,right = cut(img)
+#print(bottom-top,right-left)
 #print(img.shape,top,bottom,left)
-
-
-col,ll = scale(img,top,bottom,left)
-# Convert image to gray scale
-img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-peak,dist = extract(img.copy(),col,top,bottom,ll)
-d_avg = np.average(dist)
-print(d_avg)
-
-img = img_resize(img[top:bottom,left:right],d_avg,512)
-cv2.imshow('i3',img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
+#
+#
+#col,ll = scale(img,top,bottom,left)
+## Convert image to gray scale
+#img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+#peak,dist = extract(img.copy(),col,top,bottom,ll)
+#d_avg = np.average(dist)
+#print(d_avg)
+#
+#img = img_resize(img[top:bottom,left:right],d_avg,512)
+#cv2.imshow('img',img)
+#cv2.waitKey(0)
+#cv2.destroyAllWindows()
 
 
 # extract the outline of the annotated image
@@ -532,3 +573,6 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
 #fhot = one_hot(overlap_path,final_dim)
 
 
+
+
+    
