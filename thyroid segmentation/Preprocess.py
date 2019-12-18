@@ -292,6 +292,123 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
             return fimg_list
 
 
+def maxdist(img,t,b,l,r):
+    img = img[t:b,l:r]
+    m,n,d = img.shape               
+    
+    disp(img)
+    
+    (x,y) = np.where(np.sum((img>[0,30,100])*(img<[80,160,256]),axis=-1)==3)
+    print(x,y)
+    
+    num = x.shape[0]
+    p = {}
+    px = -1   # previous x
+    x2 = []
+    y2 = []
+    for i in range(num):
+        if px != x[i]:
+            if px != -1:
+                p[px].sort()
+                m = p[px][0]
+                yc = p[px][1:].copy()
+                for j in yc:
+                    if j>m-10 and j<m+10:
+                        p[px].remove(j)
+                    else:
+                        m = j
+            p[x[i]] = []
+            px = x[i]
+        p[x[i]].append(y[i])
+        
+    for k,v in p.items():
+        for val in v:
+            x2.append(k)
+            y2.append(val)
+    
+    x2 = np.array(x2)
+    y2 = np.array(y2)
+    
+    m = np.uint8(np.zeros((b-t,r-l)))
+    m1 = []
+    ln = x2.shape[0]
+    for i in range(ln):
+        m[x2[i],y2[i]] = 255
+        m1.append(np.array([x2[i],y2[i]]))
+    m1 = np.array(m1)
+    
+    disp(m)
+    
+    h = cv2.convexHull(m1, False)
+    h = h.reshape(h.shape[0],2)
+    m = np.uint8(np.zeros((b-t,r-l,3)))
+    h2 = np.int32(np.zeros(h.shape))
+    h2[:,0] = h[:,1]
+    h2[:,1] = h[:,0]
+    cv2.drawContours(m,[h2],-1,(0,180,200), 1,1)
+    
+    mid = np.int32(np.average(h,axis=0))
+    cv2.circle(m,(mid[1],mid[0]),2,(100,255,180),-1)
+    disp(m)
+    
+    # largest distance from a set of points
+    def ldist(h):
+        n,d = h.shape
+        maxd = 0  #largest distance
+        maxp = None
+        xL,yL = mid
+        dp = None   
+        mcd = 0   # maximum distance through the center
+        for i in range(n):
+            x1,y1 = h[i]
+            xL,yL = mid
+            x,y = (2*xL-x1),(2*yL-y1)
+            cnt = 0
+            
+            while True:
+                pos = cv2.pointPolygonTest(h,(x,y),True)
+                cnt += 1
+                #print(pos,x,y,xL,yL,x1,y1,' ',0)
+                if abs(pos)<3 or cnt>10:
+                    #print(pos,x,y,xL,yL,x1,y1,' ',1)
+                    break
+                
+                elif pos<0 and abs(pos)>=3:
+                    x,y = np.int32(((x+xL)/2,(y+yL)/2))
+                    #print(pos,x,y,xL,yL,x1,y1,' ',2)
+                    
+                elif pos>=0 and abs(pos)>=3:
+                    cx,cy = x,y
+                    x,y = (2*x-xL),(2*y-yL)
+                    xL,yL = cx,cy
+                    
+                    #print(pos,x,y,xL,yL,x1,y1,' ',3)
+               
+            cd = calcdist(h[i],[x,y])
+            if mcd < cd:
+                mcd = cd
+                dp = [h[i],np.int32([x,y])]
+            
+            for j in range(i+1,n):
+                d = calcdist(h[i],h[j])
+                if maxd < d:
+                    maxd = d
+                    maxp = [h[i],h[j]]
+            #print('')
+        return maxd,maxp,mcd,dp
+    
+    maxd,maxp,mcd,dp = ldist(h)
+    print(maxd,maxp,mcd)
+    print(dp)
+    
+    cv2.line(m,(maxp[0][1],maxp[0][0]),(maxp[1][1],maxp[1][0]),(100,200,50),1)
+    cv2.line(m,(dp[0][1],dp[0][0]),(dp[1][1],dp[1][0]),(200,100,100),1)
+    disp(m)
+    return maxd,maxd,maxp,mcd,dp
+
+
+
+
 
 
 
