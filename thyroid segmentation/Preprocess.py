@@ -108,6 +108,8 @@ def calcdist(p1,p2):
 
 # Extract the pixels of the scale and measure the distance if there is a number beside it
 def getdist(img,col,top,bottom,flist):
+    
+    img = img.copy()
    # cnn model trained on decimal mnist
     model = load_model2()
 
@@ -178,7 +180,7 @@ def getdist(img,col,top,bottom,flist):
 
 # resizes image based on distance while maintaining aspect ratio
 def img_resize(img,top,bottom,left,right,d_avg,final_shape):
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+#    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     img = img[top:bottom,left:right]
     m,n = img.shape
     
