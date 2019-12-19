@@ -96,6 +96,16 @@ def load_model2():
                   metrics=['accuracy'])
     return model
 
+# display any image
+def disp(img):
+    cv2.imshow('img',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+# calculate distance between points
+def calcdist(p1,p2):
+    return np.sqrt(np.square(p1[0]-p2[0]) + np.square(p1[1]-p2[1]))
+
 # Extract the pixels of the scale and measure the distance if there is a number beside it
 def getdist(img,col,top,bottom,flist):
    # cnn model trained on decimal mnist
