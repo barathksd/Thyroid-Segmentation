@@ -12,14 +12,21 @@ import cv2
 
 class Patient:
     
-    def __init__(self,orgimage,pathology,details):
-        self.orgimage = orgimage    #list of 2 images
-        self.pathology = pathology  
+    def __init__(self,details):
+        self.orgimage = []    #list of 2 images
         self.details = details      # dict containing patient details
+        self.top = None        
+        self.bottom = None        
+        self.left = None
+        self.right = None
+        self.scimage = []
+        
+    def addimage(self,img):
+        self.orgimage.append(img)
         
     def cut(self,dims):
         top,bottom,left,right = dims
-        self.top = top              #list of 2 values, for both the images
+        self.top = top              
         self.bottom = bottom        
         self.left = left
         self.right = right
@@ -86,8 +93,12 @@ def cut(img):
     return top, bottom, left, right
 
 # Extract the column corresponding to the scale 
-def extscale(img,top,bottom,left):
+def extscale(pobj,index):
+    
+    img = pobj.orgimage[index].copy()
+    top,bottom,left = pobj.top, pobj.bottom, pobj.left
     i2 = img.copy()
+    
     
     # convert BGR image to gray scale
     img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
