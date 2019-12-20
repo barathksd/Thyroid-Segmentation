@@ -102,6 +102,10 @@ def disp(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+# returns gray scale of the image
+def gray(img):
+    return cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    
 # calculate distance between points
 def calcdist(p1,p2):
     return np.sqrt(np.square(p1[0]-p2[0]) + np.square(p1[1]-p2[1]))
@@ -304,15 +308,18 @@ def one_hot(overlap_path,fd=6):   # 1-thyroid, 2-papillary, 3-benign, 4-cyst, 5-
             return fimg_list
 
 
-def maxdist(img,t,b,l,r):
-    img = img[t:b,l:r]
-    m,n,d = img.shape               
-    
+def maxdist(img):
+   
     disp(img)
     
-    (x,y) = np.where(np.sum((img>[0,30,100])*(img<[80,160,256]),axis=-1)==3)
-    print(x,y)
-    
+    img[np.where(np.sum(img>[20,20,200],axis=-1)!=3)] =  0
+    disp(img)
+
+    edges = cv2.Canny(img,100,255)
+    x,y = np.where(edges>0)
+    disp(edges)
+    print(x.shape)
+
     num = x.shape[0]
     p = {}
     px = -1   # previous x
@@ -340,12 +347,12 @@ def maxdist(img,t,b,l,r):
     
     x2 = np.array(x2)
     y2 = np.array(y2)
-    
-    m = np.uint8(np.zeros((b-t,r-l)))
+    print(x2.shape)
+    m = np.uint8(np.zeros(img.shape))
     m1 = []
     ln = x2.shape[0]
     for i in range(ln):
-        m[x2[i],y2[i]] = 255
+        cv2.circle(m, (y2[i],x2[i]), 1, (255,255,255), 0) 
         m1.append(np.array([x2[i],y2[i]]))
     m1 = np.array(m1)
     
@@ -353,14 +360,15 @@ def maxdist(img,t,b,l,r):
     
     h = cv2.convexHull(m1, False)
     h = h.reshape(h.shape[0],2)
-    m = np.uint8(np.zeros((b-t,r-l,3)))
+    print(h.shape)
     h2 = np.int32(np.zeros(h.shape))
     h2[:,0] = h[:,1]
     h2[:,1] = h[:,0]
-    cv2.drawContours(m,[h2],-1,(0,180,200), 1,1)
+    cv2.drawContours(m,[h2],-1,(0,180,200), 2,1)
     
     mid = np.int32(np.average(h,axis=0))
     cv2.circle(m,(mid[1],mid[0]),2,(100,255,180),-1)
+    
     disp(m)
     
     # largest distance from a set of points
@@ -410,17 +418,12 @@ def maxdist(img,t,b,l,r):
         return maxd,maxp,mcd,dp
     
     maxd,maxp,mcd,dp = ldist(h)
-    print(maxd,maxp,mcd)
-    print(dp)
+    print(maxd,maxp)
+    print(mcd,dp)
     
     cv2.line(m,(maxp[0][1],maxp[0][0]),(maxp[1][1],maxp[1][0]),(100,200,50),1)
     cv2.line(m,(dp[0][1],dp[0][0]),(dp[1][1],dp[1][0]),(200,100,100),1)
     disp(m)
-    return maxd,maxd,maxp,mcd,dp
-
-
-
-
 
 
 
