@@ -174,7 +174,12 @@ def extscale(pobj,index):
     cv2.destroyAllWindows()
     return col[0],flist[0]
 
-
+def fillextra(img):
+    # img is already border removed and cut image
+    m = list(map(lambda x: 255 if (x[1]>50 or x[2]>50) and (2*x[0]<x[1] and 2*x[0]<x[2]) else 0, img.reshape(-1,3)))
+    m = np.uint8(m).reshape((img.shape[0],img.shape[1]))
+    dst = cv2.inpaint(img,m,3,cv2.INPAINT_TELEA)
+    return dst
 
 #p1.display(p1.orgimage)
 
