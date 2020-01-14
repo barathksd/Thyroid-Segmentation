@@ -176,9 +176,9 @@ def extscale(pobj,index):
 
 def fillextra(img):
     # img is already border removed and cut image
-    m = list(map(lambda x: 255 if (x[1]>50 or x[2]>50) and (2*x[0]<x[1] and 2*x[0]<x[2]) else 0, img.reshape(-1,3)))
-    m = np.uint8(m).reshape((img.shape[0],img.shape[1]))
-    dst = cv2.inpaint(img,m,3,cv2.INPAINT_TELEA)
+    m = list(map(lambda x: 255 if (x[1]>50 or x[2]>50) and (1.8*x[0]<x[1] and 1.8*x[0]<x[2]) else 0, img.reshape(-1,3))) # select the pixels and form a 1D mask
+    m = np.uint8(m).reshape((img.shape[0],img.shape[1])) # reshape it to a 2D mask
+    dst = cv2.inpaint(img,m,3,cv2.INPAINT_TELEA) # fill the mask area
     return dst
 
 #p1.display(p1.orgimage)
