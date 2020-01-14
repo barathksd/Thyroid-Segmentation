@@ -64,7 +64,7 @@ def cut(img):
     judge_len = 30
     judge_len_2 = 20
     min_unique_1 = 5
-    min_unique_2 = 20
+    min_unique_2 = 30
     
     top = 0
     bottom = mono_img.shape[0]-1
