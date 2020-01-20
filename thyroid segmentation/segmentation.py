@@ -84,14 +84,12 @@ def f1(y_true, y_pred):
 def train():
     tensorboard = TensorBoard(log_dir='C:\\Users\\AZEST-2019-07\\Desktop\\pyfiles\\logs\\tb1')
     
-    
-    model = sm.Unet('vgg16', input_shape=(512, 512, 1), encoder_weights=None, classes = 5, activation='sigmoid')
-    
+    model = sm.Unet('vgg16', input_shape=(448, 512, 3), classes = 5, activation='sigmoid',encoder_weights='imagenet')
         
     opt = keras.optimizers.Adam(learning_rate=0.001)
     
-    
-    model.compile(loss=sm.losses.bce_jaccard_loss,
+    loss=sm.losses.JaccardLoss()
+    model.compile(loss=loss,
                       optimizer=opt,
                       metrics=[sm.metrics.iou_score,f1])
     
