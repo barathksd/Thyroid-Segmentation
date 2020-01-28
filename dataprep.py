@@ -266,6 +266,26 @@ def cut(img):
 #    cv2.waitKey(0)
 #    cv2.destroyAllWindows()
     return top, bottom, left, right
+# _ 
+def cut_man(img):
+    points = []
+    def mousepoint(event,x,y,flags,param): 
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(x,y,img[y,x],'  --------')
+            cv2.circle(img,(x,y),1,(255,255,255),-1)
+            points.append((x,y))
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image',mousepoint)
+    
+    while(1):
+        cv2.imshow('image',img)
+        if cv2.waitKey(20) & 0xFF == 27:
+            #cv2.destroyAllWindows()
+            break
+    cv2.destroyAllWindows()
+    # top, bottom, left, right
+    return points[0][1],points[1][1],points[0][0],points[1][0]
+    
 
 
 
