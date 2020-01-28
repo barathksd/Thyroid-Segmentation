@@ -211,32 +211,14 @@ def cut_alt(img):
 def cut(img):
 
     mono_img = np.sum(img, axis=2)
-    #bin_img = np.sign(np.where((mono_img>140)&(mono_img<170), 0, mono_img))
     
-    row_activate = np.zeros(mono_img.shape[0])
     col_activate = np.zeros(mono_img.shape[1])
     
-    for row in range(mono_img.shape[0]):
-        row_activate[row] = len(np.unique(mono_img[row]))
+    
     for col in range(mono_img.shape[1]):
+        #Count the number of unique values in each column
         col_activate[col] = len(np.unique(mono_img[:,col]))
-    
-    judge_len = 30
-    judge_len_2 = 20
-    min_unique_1 = 5
-    min_unique_2 = 20
-    
-    top = 0
-    bottom = mono_img.shape[0]-1
-    for t in range(mono_img.shape[0]-judge_len):
-        if all(row_activate[t:t+judge_len] >= min_unique_1):
-            top = t
-            for b in range(top, mono_img.shape[0]-judge_len_2):
-                if all(row_activate[b:b+judge_len_2] < min_unique_2):
-                    break
-            bottom = b
-            break
-    
+        
     judge_len = 30
     min_unique = 30
     left = 0
@@ -249,6 +231,30 @@ def cut(img):
                     break
             right = r
             break
+    
+    mono_img = np.sum(img[:,left:right,:], axis=2)
+    row_activate = np.zeros(mono_img.shape[0])
+    
+    for row in range(mono_img.shape[0]):
+        #Count the number of unique values in each row
+        row_activate[row] = len(np.unique(mono_img[row]))
+    judge_len = 30
+    judge_len_2 = 20
+    min_unique_1 = 5
+    min_unique_2 = 20
+    
+    top = 0
+    bottom = mono_img.shape[0]-1
+    
+    for t in range(mono_img.shape[0]-judge_len):
+        if all(row_activate[t:t+judge_len] >= min_unique_1):
+            top = t
+            for b in range(top, mono_img.shape[0]-judge_len_2):
+                if all(row_activate[b:b+judge_len_2] < min_unique_2):
+                    break
+            bottom = b
+            break
+    
 #    cut_img = img[top:bottom, left:right]
     
 #    cv2.imshow('image',cut_img)
