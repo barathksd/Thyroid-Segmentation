@@ -100,6 +100,10 @@ def load_model2():
     return model
 
 #imgj = loadimg(jpg_path,'jpg')
+def disp(img):
+    cv2.imshow('img',img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows(0)
 
 
 #segments the image based on the input points
