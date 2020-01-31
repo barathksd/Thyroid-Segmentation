@@ -97,8 +97,14 @@ def load_model2():
     return model
 
 # display any image
-def disp(img):
-    cv2.imshow('img',img)
+def disp(img,img1=None,img2=None):
+    
+    cv2.imshow('img0',img)
+    if not img1 is None:
+        cv2.imshow('img1',img1)
+    if not img2 is None:
+        cv2.imshow('img2',img2)
+        
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
