@@ -31,10 +31,16 @@ def quality(img):
 img = cv2.imread(f1)[40:-80,20:-20,:]
 t,b,l,r = dataprep.cut(img)
 img = img[t:b,l:r]
-img = np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
+imgb = np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
 
+q = quality(imgb)
+cl = 5000/max(q,2000) - 0.9
 clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
-c = clahe.apply(img)
+c0 = clahe.apply(np.uint8(img[:,:,0]))
+c1 = clahe.apply(np.uint8(img[:,:,0]))
+c2 = clahe.apply(np.uint8(img[:,:,0]))
+img[:,:,0],img[:,:,1],img[:,:,2] = c0,c1,c2
+
 
 disp(img,c)
 
