@@ -36,13 +36,11 @@ imgb = np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
 q = quality(imgb)
 cl = 5000/max(q,2000) - 0.9
 clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8,8))
-c0 = clahe.apply(np.uint8(img[:,:,0]))
-c1 = clahe.apply(np.uint8(img[:,:,0]))
-c2 = clahe.apply(np.uint8(img[:,:,0]))
-img[:,:,0],img[:,:,1],img[:,:,2] = c0,c1,c2
+img[:,:,0] = clahe.apply(np.uint8(img[:,:,0]))
+img[:,:,1] = clahe.apply(np.uint8(img[:,:,1]))
+img[:,:,2] = clahe.apply(np.uint8(img[:,:,2]))
 
-
-disp(img,c)
+disp(img)
 
 ddepth = cv2.CV_8U
 l1 = cv2.Laplacian(img, ddepth, ksize=3) 
