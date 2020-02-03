@@ -85,6 +85,26 @@ def loadimg(fpath,ftype):
 
 imgd = loadimg(dicom_path,'dicom')
 
+def readxml(fxml,img):
+    colordict = {'Thyroid':(200,100,100),'papillary':(100,200,200)}
+    tree = et.parse(fxml)
+    root = tree.getroot()
+    a = {}    
+    for ann in root.iter('image'):
+        for el in ann.findall('polygon'):
+            lab = el.attrib['label']
+            points = el.attrib['points'].split(';')
+            p = [(float(i.split(',')[0]),float(i.split(',')[1])) for i in points]
+            a[lab] = p
+    
+    for k,v in a.items():        
+        pts = np.array(v, np.int32)
+        mask = colordict[k]
+        
+        cv2.polylines(img,[pts],True,color = mask)
+        cv2.fillConvexPoly(img, points=pts, color=mask)
+    disp(img)
+    return img
 
 
 def load_model2():
