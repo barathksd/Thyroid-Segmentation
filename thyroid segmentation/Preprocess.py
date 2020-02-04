@@ -241,7 +241,14 @@ def enhanceQ(img):
     img[:,:,1] = clahe.apply(img[:,:,1])
     img[:,:,2] = clahe.apply(img[:,:,2])
     return img
-    
+
+# plot histogram
+def histo(img):
+    img = np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
+    hist = cv2.calcHist([img],[0],None,[256],[0,256])
+    #plt.hist(img.ravel(),256,[0,256])
+    #plt.show()
+    return hist
 
 # extract the outline of the annotated image
 def create_image(imgd,img,color,k,index,c=5):
