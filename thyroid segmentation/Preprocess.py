@@ -20,6 +20,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.preprocessing.image import ImageDataGenerator 
 from tensorflow.keras.models import model_from_json, load_model
 import tqdm
+import xml.etree.ElementTree as et
 
 base = 'D:\\Ito data\\'
 
@@ -223,6 +224,24 @@ def img_resize(img,top,bottom,left,right,d_avg):
     
     return img
 
+# find quality of color image
+def quality(img):
+    img = np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
+    ddepth = cv2.CV_8U
+    laplacian = cv2.Laplacian(img, ddepth, ksize=3) 
+    #disp(laplacian)
+    return laplacian
+
+# enhance the quality of cut image using CLAHE method
+def enhanceQ(img):
+    q = quality(img)
+    cl = 5000/max(2000,q) - 0.9
+    clahe = cv2.createCLAHE(clipLimit=cl, tileGridSize=(8,8))
+    img[:,:,0] = clahe.apply(img[:,:,0])
+    img[:,:,1] = clahe.apply(img[:,:,1])
+    img[:,:,2] = clahe.apply(img[:,:,2])
+    return img
+    
 
 # extract the outline of the annotated image
 def create_image(imgd,img,color,k,index,c=5):
