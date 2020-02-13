@@ -118,20 +118,21 @@ def load_model2():
     return model
 
 # display any image
-def disp(img,img1=None,img2=None):
+def disp(img,imgl=None):
     
-    cv2.imshow('img0',img)
-    if not img1 is None:
-        cv2.imshow('img1',img1)
-    if not img2 is None:
-        cv2.imshow('img2',img2)
+    cv2.imshow('img',img)
+    if not imgl is None:
+        n = len(imgl)
+        for i in range(n):
+            if not imgl[i] is None:
+                cv2.imshow('img'+str(i),imgl[i])
         
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 # returns gray scale of the image
 def gray(img):
-    return cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    return np.uint8(cv2.cvtColor(img,cv2.COLOR_BGR2GRAY))
     
 # calculate distance between points
 def calcdist(p1,p2):
