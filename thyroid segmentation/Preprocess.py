@@ -138,6 +138,23 @@ def gray(img):
 def calcdist(p1,p2):
     return np.sqrt(np.square(p1[0]-p2[0]) + np.square(p1[1]-p2[1]))
 
+def mouse(img):
+    points = []
+    def mousepoint(event,x,y,flags,param): 
+        if event == cv2.EVENT_LBUTTONDOWN:
+            print(x,y,img[y,x],'  --------')
+            #cv2.circle(img,(x,y),1,(255,255,255),-1)
+            #points.append((x,y))
+
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image',mousepoint)
+    
+    while(1):
+        cv2.imshow('image',img)
+        if cv2.waitKey(20) & 0xFF == 27:
+            cv2.destroyAllWindows()
+            break
+
 # Extract the pixels of the scale and measure the distance if there is a number beside it
 def getdist(img,col,top,bottom,flist):
     
