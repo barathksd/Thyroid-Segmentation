@@ -11,8 +11,8 @@ import xml.etree.ElementTree as et
 import gc
 import os
 
-f1 = 'C:\\Users\\AZEST-2019-07\\Downloads\\Image002.jpg'
-fxml = 'C:\\Users\\AZEST-2019-07\\Downloads\\annotations.xml'
+f1 = 'C:\\Users\\AZEST-2019-07\\Desktop\\Ito\\Patient 1'
+fxml = 'C:\\Users\\AZEST-2019-07\\Desktop\\Ito\\Patient 1\\annotation1.xml'
 
 
 def transfer(dbase):
@@ -30,95 +30,55 @@ def transfer(dbase):
                     cv2.imwrite(spath,img)
                 #break
 
-img0 = cv2.imread(f1)[40:-35,20:-15]
-#disp(img)
-img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
+def loadimg(fpath):
+    imgdict = {}
+    for path,subdir,files in os.walk(fpath):
+        for file in files:
+            full_path = path+ '\\' + file
+            if '.jpg' in full_path:
+                print(file)
+                img = cv2.imread(full_path)
+                imgdict[file] = img
+            
+    return imgdict
 
-c = cv2.Canny(img,750,800)
-#mouse(c)
+imgdict = loadimg(f1)
 
 
-kernel = np.ones((50,65),np.float32)/500
-dst = cv2.filter2D(c,-1,kernel,borderType = cv2.BORDER_WRAP)
-disp(img0)
-ct = np.int32(np.mean(np.where(dst==np.max(dst)),axis=-1))
-gc.collect()
-
-t,b,l,r = 0,0,0,0
-s = 0
-while(s<4):
-    s = 0
-    if  dst[ct[0]-t,ct[1]] >= 85:
-        t += 1
-    else:
-        s += 1
-    if  dst.shape[0]>ct[0]+b and dst[ct[0]+b,ct[1]] >= 88:
-        b += 1
-    else:
-        s += 1
-    if  dst[ct[0],ct[1]-l] >= 88:
-        l += 1
-    else:
-        s += 1
-    if  dst.shape[1]>ct[1]+r and dst[ct[0],ct[1]+r] >= 88:
-        r += 1
-    else:
-        s += 1
-
-print(t,b,l,r)
-sc = img0[ct[0]-t:ct[0]+b,ct[1]-l:ct[1]+r].copy()
-#disp(sc)
-
-m,n,d = sc.shape
-sh = np.zeros((sc.shape[0],sc.shape[1]))
-
-for i in range(m):
-    for j in range(n):
-        b,g,r = sc[i,j]
-        if (not (r<100 or g<100)) and ((2*b < g and 2*b < r) or (r<200 and r<b-30 and r<g-10)):
-            sh[i,j] = 255
-
-#print(sc.sum(axis=-1)
-# sc[:,int(sc.shape[1]/2)] = [200,100,50]
-# sc[:,int(sc.shape[1]/2)-6] = [200,100,50]
-# sc[10,:] = [200,100,50]
-gc.collect()
-
-dmin = 100
-cmax = int(sc.shape[1]/2)-5
-sc0 = cv2.cvtColor(sc,cv2.COLOR_BGR2GRAY)
-for i in range(int(sc.shape[1]/2)-5,int(sc.shape[1]/2)+6):
-    col = len(sc0[:,i])
+def readxml(fxml,imgdict):
+    #B-G-R values for the labels
+    # Thyroid: B=100, G=200, R=0
+    # Trachea: B= 100,G=200, R=200
+    # Nodule:  B=30 , G=60 , R=160
+    # Artery:  B=200, G=100, R=0
     
-    p = 0
-    n = 0
-    j = 10
-    while j<col:
-        #print(i,' ',j,' ',sc0[j,i],' ',sc0[j-2,i],' ',p,' ',n,' ',cmax,' ',dmin)
-        
-        if (sc0[j,i] > 120) and (sc0[j-2,i] < 36) :
-            n += 1
-            if n == 2:
-                p = j
-            elif n==3:
-                if j-p < dmin:
-                    dmin = j-p
-                    cmax = i
-                print('break ',i,' ',j,' ',sc0[j,i],' ',sc0[j-2,i],' ',p,' ',n,' ',cmax,' ',dmin,' ',j-p)
-                break
-            j += 3
-        j += 1
-
-
-
-if np.max(sh.sum(axis=0)) > np.max(sh.sum(axis=1)):
-    cd = np.argmax(sh.sum(axis=0))
-    print('Vertical',cd)
-    sc[:,cd] = [50,200,50]
-    sc[:,cmax] = [200,100,50]
-    disp(sc,[sh])
-else:
-    print('Horizontal',np.argmax(sh.sum(axis=1)))
-
-#hist = histo(img)
+    colordict = {'Thyroid':(100,200,0),'Trachea':(100,200,200),'Nodule':(30,60,160),'Artery':(200,100,0)}
+    tree = et.parse(fxml)
+    root = tree.getroot()
+    d = {}
     
+    for ann in root.iter('image'):
+        d = {}
+        print(ann.attrib['name'])
+        for el in ann.findall('polygon'):
+            lab = el.attrib['label']
+            points = el.attrib['points'].split(';')
+            p = [(float(i.split(',')[0]),float(i.split(',')[1])) for i in points]
+ 
+            if not lab in d.keys():
+                d[lab] = []
+            d[lab].append(p)
+
+        for k in ['Thyroid','Nodule','Artery','Trachea']:
+            if k in d.keys():
+                for v in d[k]:
+                    pts = np.array(v, np.int32)
+                    mask = colordict[k]
+                    
+                    cv2.polylines(imgdict[ann.attrib['name']],[pts],True,color = mask)
+                    cv2.fillConvexPoly(imgdict[ann.attrib['name']], points=pts, color=mask)
+        disp(imgdict[ann.attrib['name']])  # display the picture in opencv
+        #cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\Ito\\Patient 1\\annotated'+ann.attrib['name'], imgdict[ann.attrib['name']])
+    return imgdict
+
+readxml(fxml,imgdict)
