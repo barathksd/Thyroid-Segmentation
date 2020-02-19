@@ -86,26 +86,33 @@ def loadimg(fpath,ftype):
 
 imgd = loadimg(dicom_path,'dicom')
 
-def readxml(fxml,img):
-    colordict = {'Thyroid':(200,100,100),'papillary':(100,200,200)}
+def readxml(fxml,imgdict):
+    colordict = {'Thyroid':(100,200,0),'Trachea':(100,200,200),'Nodule':(30,60,160),'Artery':(200,100,0)}
     tree = et.parse(fxml)
     root = tree.getroot()
+    l = []
     a = {}    
     for ann in root.iter('image'):
+        print(ann.attrib['name'])
+        a = {}
         for el in ann.findall('polygon'):
             lab = el.attrib['label']
             points = el.attrib['points'].split(';')
             p = [(float(i.split(',')[0]),float(i.split(',')[1])) for i in points]
             a[lab] = p
-    
-    for k,v in a.items():        
-        pts = np.array(v, np.int32)
-        mask = colordict[k]
+            l.append(a)
         
-        cv2.polylines(img,[pts],True,color = mask)
-        cv2.fillConvexPoly(img, points=pts, color=mask)
-    disp(img)
-    return img
+        for k in ['Thyroid','Nodule','Artery','Trachea']:
+            if k in a.keys():
+                pts = np.array(a[k], np.int32)
+                mask = colordict[k]
+                
+                cv2.polylines(imgdict[ann.attrib['name']],[pts],True,color = mask)
+                cv2.fillConvexPoly(imgdict[ann.attrib['name']], points=pts, color=mask)
+        #disp(imgdict[ann.attrib['name']])
+        #cv2.imwrite('C:\\Users\\AZEST-2019-07\\Desktop\\Ito\\Patient 1\\annotated'+ann.attrib['name'], imgdict[ann.attrib['name']])
+    return imgdict
+        
 
 
 def load_model2():
