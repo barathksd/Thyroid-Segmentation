@@ -276,6 +276,124 @@ def histo(img):
     #plt.show()
     return hist
 
+def write_json(wpath,data):
+    with open(wpath, 'w') as outfile:
+        json.dump(data, outfile)
+    
+    
+def read_json(rpath):
+    with open(rpath) as json_file:
+        data = json.load(json_file)
+        return data
+
+def append_json(rpath,name,val,wpath=None):
+    if wpath == None:
+        wpath = rpath
+    data = read_json(rpath)
+    data[name] = val
+    write_json(wpath,data)
+    
+    return data
+
+
+def orinfo(img0):
+    img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
+
+    c = cv2.Canny(img,750,800)
+    
+    kernel = np.ones((50,50),np.float32)/500
+    dst = cv2.filter2D(c,-1,kernel,borderType = cv2.BORDER_WRAP)
+    
+    ct = np.int32(np.mean(np.where(dst==np.max(dst)),axis=-1))
+    #print(ct,ct[0]/img.shape[0],ct[1]/img.shape[1])
+    if ct[0]/img.shape[0]<0.75 or ct[1]/img.shape[1]<0.75: ######
+        return -1,-1,-1
+    
+    dst = np.uint8(255/np.max(dst)*dst)
+    #disp(img,[dst])
+    t,b,l,r = 0,0,0,0
+    s = 0
+    while(s<4):
+        s = 0
+        if  dst[ct[0]-t,ct[1]] >= 100:
+            t += 1
+        else:
+            s += 1
+        if  dst.shape[0]>ct[0]+b and dst[ct[0]+b,ct[1]] >= 100:
+            b += 1
+        else:
+            s += 1
+        if  dst[ct[0],ct[1]-l] >= 100:
+            l += 1
+        else:
+            s += 1
+        if  dst.shape[1]>ct[1]+r and dst[ct[0],ct[1]+r] >= 100:
+            r += 1
+        else:
+            s += 1
+    
+    #print(t,b,l,r)
+    
+    if np.min([t,b,l,r])<=12 or (np.min([t,b,l,r])<20 and np.sum([t,b,l,r])<=110):
+        return -1,-1,-1
+    
+    sc = img0[ct[0]-t:ct[0]+b,ct[1]-l:ct[1]+r].copy()
+    m,n,d = sc.shape
+    sh = np.uint8(np.zeros((sc.shape[0],sc.shape[1])))
+    
+    for i in range(m):
+        for j in range(n):
+            b,g,r = sc[i,j]
+            if (not (r<100 or g<100)) and ((2*b < g and 2*b < r) or (r<200 and r<b-30 and r<g-10)):
+                sh[i,j] = 255
+    gc.collect()
+    
+    #disp(sc)
+    
+    if np.max(sh.sum(axis=0)) > np.max(sh.sum(axis=1)):
+        cd = np.argmax(sh.sum(axis=0))   
+        sc0 = np.uint8(cv2.cvtColor(sc,cv2.COLOR_BGR2GRAY))
+        sc0[sh>0] = 0
+        dmin = 100
+        cmax = int(sc.shape[1]/2)-3
+        
+        for i in range(int(sc.shape[1]/2)-3,int(sc.shape[1]/2)+4):
+            col = len(sc0[:,i])
+            
+            p = 0
+            n = 0
+            j = 10
+            while j<col:
+                #print(i,' ',j,' ',sc0[j,i],' ',sc0[j-2,i],' ',p,' ',n,' ',cmax,' ',dmin)
+                
+                if (sc0[j,i] > 120) and (sc0[j-2,i] < 36) :
+                    n += 1
+                    if n == 2:
+                        p = j
+                    elif n==3:
+                        if j-p < dmin:
+                            dmin = j-p
+                            cmax = i
+                        #print('break ',i,' ',j,' ',sc0[j,i],' ',sc0[j-2,i],' ',p,' ',n,' ',cmax,' ',dmin,' ',j-p)
+                        break
+                    j += 3
+                j += 1
+                
+        #print('vertical',cd,cmax,abs(cd-cmax))
+        sc[:,cd] = [50,200,50]
+        sc[:,cmax] = [200,100,50]
+        #disp(sc)
+        return 0,int(cd),int(cmax)
+    
+    else:
+        cd = np.argmax(sh.sum(axis=1))
+        sc[cd,:] = [50,200,50]
+        #disp(sc)
+        #print('Horizontal')
+        return 1,int(cd),-1
+    
+    
+
 # extract the outline of the annotated image
 def create_image(imgd,img,color,k,index,c=5):
     top,bottom,left,right = cut(imgd[k][min(int(index/2),1,c)])          
