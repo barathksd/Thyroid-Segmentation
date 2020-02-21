@@ -297,7 +297,7 @@ def append_json(rpath,name,val,wpath=None):
 
 
 def orinfo(img0):
-     img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
+    img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
 
     c = cv2.Canny(img,750,800)
     
