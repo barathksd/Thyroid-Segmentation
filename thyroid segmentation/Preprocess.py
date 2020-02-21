@@ -297,7 +297,7 @@ def append_json(rpath,name,val,wpath=None):
 
 
 def orinfo(img0):
-    img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
+     img = np.uint8(cv2.cvtColor(img0,cv2.COLOR_BGR2GRAY))
 
     c = cv2.Canny(img,750,800)
     
@@ -315,11 +315,11 @@ def orinfo(img0):
     s = 0
     while(s<4):
         s = 0
-        if  dst[ct[0]-t,ct[1]] >= 100:
+        if  dst[ct[0]-t,ct[1]] >= 120:
             t += 1
         else:
             s += 1
-        if  dst.shape[0]>ct[0]+b and dst[ct[0]+b,ct[1]] >= 100:
+        if  dst.shape[0]>ct[0]+b and dst[ct[0]+b,ct[1]] >= 120:
             b += 1
         else:
             s += 1
@@ -333,8 +333,8 @@ def orinfo(img0):
             s += 1
     
     #print(t,b,l,r)
-    
-    if np.min([t,b,l,r])<=12 or (np.min([t,b,l,r])<20 and np.sum([t,b,l,r])<=110):
+    #print(np.min([t,b,l,r]),np.sum([t,b,l,r]),t,b,l,r)
+    if np.min([t,b,l,r])<=12 or (np.min([t,b,l,r])<20 and (np.max([t,b,l,r])>45 or np.sum([t,b,l,r])<=115)):
         return -1,-1,-1
     
     sc = img0[ct[0]-t:ct[0]+b,ct[1]-l:ct[1]+r].copy()
@@ -343,10 +343,10 @@ def orinfo(img0):
     
     for i in range(m):
         for j in range(n):
-            b,g,r = sc[i,j]
-            if (not (r<100 or g<100)) and ((2*b < g and 2*b < r) or (r<200 and r<b-30 and r<g-10)):
+            bl,gr,rd = sc[i,j]
+            if (not (rd<100 or gr<100)) and ((2*bl < gr and 2*bl < rd) or (rd<200 and rd<bl-30 and rd<gr-10)):
                 sh[i,j] = 255
-    gc.collect()
+    #gc.collect()
     
     #disp(sc)
     
@@ -357,7 +357,7 @@ def orinfo(img0):
         dmin = 100
         cmax = int(sc.shape[1]/2)-3
         
-        for i in range(int(sc.shape[1]/2)-3,int(sc.shape[1]/2)+4):
+        for i in range(int(sc.shape[1]/2)-4,int(sc.shape[1]/2)+4):
             col = len(sc0[:,i])
             
             p = 0
@@ -387,6 +387,9 @@ def orinfo(img0):
     
     else:
         cd = np.argmax(sh.sum(axis=1))
+        if cd==0:
+            print(t,b,l,r, ct[0]/img.shape[0], ct[1]/img.shape[1],np.sum([t,b,l,r]),np.min([t,b,l,r]),ct)
+            disp(img,[dst,sc])
         sc[cd,:] = [50,200,50]
         #disp(sc)
         #print('Horizontal')
